@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "ONDIGO",
+    "slug": "ondigo",
+    "scheme": "ondigo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ondigo.mobile"
+    },
+    "android": {
+      "package": "com.ondigo.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ONDIGO uses your location to show live delivery tracking and to record your position while a delivery is in transit."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "ONDIGO uses your camera to take timestamped handoff and drop-off photos for dispute resolution.",
+          "photosPermission": "ONDIGO can use your photo library to attach a handoff or drop-off photo."
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

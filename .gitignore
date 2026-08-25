@@ -1,0 +1,15 @@
+node_modules/
+.next/
+dist/
+build/
+.expo/
+.expo-shared/
+*.log
+.env
+.env.local
+.DS_Store
+supabase/.branches
+supabase/.temp
+.turbo/
+ios/
+android/
