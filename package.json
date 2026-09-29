@@ -13,7 +13,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local --schema public > packages/shared/src/database.types.ts",
-    "build:web": "npm run build --workspace apps/web"
+    "build:web": "NEXT_DIST_DIR=.next-build npm run build --workspace apps/web"
   },
   "devDependencies": {
     "supabase": "^2.115.0",

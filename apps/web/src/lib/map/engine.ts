@@ -36,6 +36,8 @@ export interface ViewState {
 
 export interface Engine {
   openState(abbr: string): void;
+  /** Open a state and, once it is open, press one of its cities. Works from any level. */
+  goTo(abbr: string, cityKey?: string): void;
   closeState(): void;
   selectCity(key: string): void;
   clearCity(): void;
@@ -49,6 +51,8 @@ export interface Engine {
 
 export interface EngineOptions {
   items: MapItem[];
+  /** Small screen: lower 48 only, shorter motion, no relief. */
+  phone: boolean;
   root: HTMLElement; // gets data-level for CSS
   hover: HTMLElement; // the tooltip element, positioned inside the stage
   stage: HTMLElement;
@@ -64,13 +68,19 @@ const SMALL = new Set(['RI', 'DE', 'CT', 'NJ', 'MA', 'NH', 'VT', 'MD', 'DC']);
 
 export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOptions): Engine {
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const dur = (ms: number) => (REDUCED ? 0 : ms);
-  const isPhone = () => matchMedia('(max-width: 720px)').matches;
+  const phone = opts.phone;
+  // phones get the same motion at a little over half the length
+  const dur = (ms: number) => (REDUCED ? 0 : Math.round(ms * (phone ? 0.55 : 1)));
+  const isPhone = () => phone;
   const feats = data.states.features;
+  const OFFSHORE = new Set(['AK', 'HI']);
+  const hiddenState = (f: StateFeature) => phone && OFFSHORE.has(f.properties.abbr);
   const byAbbr = Object.fromEntries(feats.map((f) => [f.properties.abbr, f])) as Record<string, StateFeature>;
 
   // ---------- projection ----------
-  const projection = d3.geoAlbersUsa().fitExtent([[12, 12], [W - 12, H - 12]], data.states);
+  // on a phone the lower 48 fill the frame; Alaska and Hawaii are reached through search
+  const fitTo = phone ? { type: 'FeatureCollection', features: feats.filter((f) => !hiddenState(f)) } as GeoJSON.FeatureCollection : data.states;
+  const projection = d3.geoAlbersUsa().fitExtent([[12, 12], [W - 12, H - 12]], fitTo);
   const path = d3.geoPath(projection);
   const frame = () => {
     const r = svgEl.getBoundingClientRect();
@@ -147,7 +157,10 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
   let base: { k: number; tx: number; ty: number } | null = null;
   let city: CityNode | null = null;
   let bundles: (Bundle & { geom: Geom; offset: number; offsetApplied?: boolean; path: Sel; hit: Sel; dots: Sel[]; count: Sel | null })[] = [];
-  let cityEls: { c: CityNode; g: SVGGElement; hit: SVGCircleElement; circ: SVGCircleElement; txt: SVGTextElement; ct: SVGTSpanElement | null }[] = [];
+  type CityEl = { c: CityNode; g: SVGGElement; hit: SVGCircleElement; lhit: SVGRectElement; circ: SVGCircleElement; txt: SVGTextElement; ct: SVGTSpanElement | null };
+  // nodes are made the first time a town earns a dot at the current zoom, so the
+  // country view starts with a hundred nodes rather than two thousand
+  let cityEls: { c: CityNode; el: CityEl | null }[] = [];
   let destroyed = false;
 
   // ---------- scaffold ----------
@@ -155,17 +168,26 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
   svg.selectAll('*').remove();
   svg.attr('viewBox', `0 0 ${W} ${H}`);
   const defs = svg.append('defs');
-  defs
+  // a light or a dark paper tile, chosen up front: blending and filtering the
+  // same tile at draw time was the single most expensive thing on a phone
+  const darkMq = matchMedia('(prefers-color-scheme: dark)');
+  const isDark = () => {
+    const forced = document.documentElement.dataset.theme;
+    return forced ? forced === 'dark' : darkMq.matches;
+  };
+  const texImage = defs
     .append('pattern')
     .attr('id', 'dm-tex')
     .attr('patternUnits', 'userSpaceOnUse')
     .attr('width', W)
     .attr('height', H)
     .append('image')
-    .attr('href', '/map/texture.jpg')
+    .attr('href', isDark() ? '/map/texture-dark.jpg' : '/map/texture.jpg')
     .attr('width', W)
     .attr('height', H)
     .attr('preserveAspectRatio', 'none');
+  const onTheme = () => texImage.attr('href', isDark() ? '/map/texture-dark.jpg' : '/map/texture.jpg');
+  darkMq.addEventListener('change', onTheme);
   const bg = svg.append('rect').attr('class', 'dm-bg').attr('x', -2000).attr('y', -2000).attr('width', 5000).attr('height', 5000);
   const gZoom = svg.append('g');
   const layers = {
@@ -179,6 +201,8 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
   const gRoutes = gDetail.append('g');
   const gConts = gDetail.append('g');
   const gCities = gDetail.append('g').attr('class', 'dm-cities');
+  const gQuiet = gCities.append('g');
+  const gLit = gCities.append('g');
   const gLabels = svg.append('g');
 
   layers.edgeD.selectAll('path').data(feats).join('path').attr('class', 'dm-edge-d').attr('d', path).attr('data-ab', (f) => f.properties.abbr);
@@ -195,9 +219,10 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
     .attr('aria-label', (f) => `${f.properties.name}, ${counts[f.properties.abbr] || 0} open requests leaving`);
   layers.texture.selectAll('path').data(feats).join('path').attr('fill', 'url(#dm-tex)').attr('d', path).attr('data-ab', (f) => f.properties.abbr);
   layers.borders.selectAll('path').data(feats).join('path').attr('class', 'dm-bd').attr('d', path).attr('data-ab', (f) => f.properties.abbr);
+  if (phone) OFFSHORE.forEach((ab) => svg.selectAll(`[data-ab="${ab}"]`).style('display', 'none'));
 
   // numbers live outside the zoomed group so they keep their pixel size
-  const counted = feats.filter((f) => counts[f.properties.abbr]);
+  const counted = feats.filter((f) => counts[f.properties.abbr] && !hiddenState(f));
   const cent = new Map(counted.map((f) => [f.properties.abbr, path.centroid(f)]));
   const small = counted.filter((f) => SMALL.has(f.properties.abbr)).sort((a, b) => cent.get(a.properties.abbr)![1] - cent.get(b.properties.abbr)![1]);
   const smallSlots = new Map(small.map((f, i) => [f.properties.abbr, i]));
@@ -210,10 +235,16 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
     .attr('data-ab', (f) => f.properties.abbr)
     .text((f) => counts[f.properties.abbr]);
 
+  const bboxOf = new Map(feats.map((f) => [f.properties.abbr, path.bounds(f)]));
   function layoutNumbers(): number[][] {
     const fr = frame();
     const rects: number[][] = [];
-    const slotMode = k < 1.5;
+    // on a wide stage the small north-east states get a leader to a column at the
+    // right; on a phone there is no such margin, so a number that does not fit
+    // inside its state is simply not drawn
+    const wide = fr.w >= 640;
+    const slotMode = wide && k < 1.5;
+    const scale = Math.min(1, Math.max(0.55, fr.w / 1100));
     nums.each(function (f: StateFeature) {
       const ab = f.properties.abbr;
       const c = cent.get(ab)!;
@@ -221,16 +252,28 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
       const py = ty + k * c[1];
       let x = px,
         y = py;
-      const size = (counts[ab] === maxCount ? 28 : 21) / fr.s;
+      const sizePx = (counts[ab] === maxCount ? 28 : 21) * scale;
+      const size = sizePx / fr.s;
       const ld = leaders.filter((d: StateFeature) => d === f);
+      const digits = String(counts[ab]).length;
+      const wPx = digits * 0.62 * sizePx + 6;
+      let show = true;
       if (slotMode && smallSlots.has(ab)) {
         x = W - 28;
         y = 150 + smallSlots.get(ab)! * 26;
         ld.attr('d', `M${px},${py} L${x - 12},${y}`).style('display', null);
-      } else ld.style('display', 'none');
+      } else {
+        ld.style('display', 'none');
+        const [[bx0, by0], [bx1, by1]] = bboxOf.get(ab)!;
+        const bw = (bx1 - bx0) * k * fr.s;
+        const bh = (by1 - by0) * k * fr.s;
+        show = bw >= wPx + 4 && bh >= sizePx + 4;
+      }
       d3.select(this).attr('x', x).attr('y', y).attr('font-size', size);
-      const w = String(counts[ab]).length * 0.62 * size * fr.s + 10;
-      const h = size * fr.s + 6;
+      (this as SVGTextElement).style.display = show ? '' : 'none';
+      if (!show) return;
+      const w = wPx + 4;
+      const h = sizePx + 6;
       const cx = fr.ox + x * fr.s;
       const cy = fr.oy + y * fr.s;
       rects.push([cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2]);
@@ -336,7 +379,7 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
 
     svg.selectAll(`[data-ab]:not([data-ab="${ab}"])`).transition('fade').duration(dur(360)).ease(d3.easeCubicOut).style('opacity', 0).style('pointer-events', 'none');
     gLabels.selectAll('*').transition().duration(dur(260)).style('opacity', 0);
-    gDetail.selectAll(':scope > g > *').interrupt().transition().duration(dur(240)).style('opacity', 0).remove();
+    clearDetail();
     cityEls = [];
     bundles = [];
     city = null;
@@ -362,6 +405,7 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
         buildDetail(false);
         svg.call(zoomB);
         svg.call(zoomB.transform, d3.zoomIdentity);
+        settle();
       });
     emit();
   }
@@ -374,7 +418,7 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
     city = null;
     bundles = [];
     cityEls = [];
-    gDetail.selectAll(':scope > g > *').interrupt().transition().duration(dur(220)).style('opacity', 0).remove();
+    clearDetail();
     gZoom
       .transition('zoom')
       .duration(dur(640))
@@ -391,6 +435,7 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
         buildDetail(false);
         svg.call(zoomC);
         svg.call(zoomC.transform, d3.zoomIdentity);
+        settle();
       });
     layers.edgeD.transition().duration(dur(640)).attr('transform', 'translate(1,1.4)');
     layers.edgeL.transition().duration(dur(640)).attr('transform', 'translate(-.6,-.8)');
@@ -403,6 +448,11 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
     svg.attr('viewBox', `0 0 ${W} ${H}`);
     defs.select('pattern').attr('patternTransform', null);
     emit();
+  }
+
+  // empty the drawing layers without touching the layers themselves
+  function clearDetail() {
+    [gRoutes, gConts, gQuiet, gLit].forEach((g) => g.selectAll('*').interrupt().remove());
   }
 
   // ---------- cities and the pressed city's lines ----------
@@ -447,43 +497,50 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
   }
 
   function buildDetail(instant: boolean) {
-    gRoutes.selectAll('*').remove();
-    gConts.selectAll('*').remove();
-    gCities.selectAll('*').remove();
+    clearDetail();
     bundles = [];
     city = null;
     const ab = scope;
-    const list = ab ? cityList.filter((c) => c.state === ab) : cityList;
-    // DOM order is reverse priority: lit cities are appended last so their hit
-    // areas sit on top of the quiet towns crowded around them
-    cityEls = [...list].reverse().map((c) => {
-      const g = gCities
-        .append('g')
-        .attr('class', 'dm-cityg' + (c.lit ? ' lit' : '') + (ab ? ' hot' : ''))
-        .attr('transform', `translate(${c.xy[0]},${c.xy[1]})`);
-      const hit = g.append('circle').attr('class', 'dm-chit');
-      const circ = g.append('circle').attr('class', 'dm-city' + (c.lit ? '' : ' quiet'));
-      const txt = g.append('text').attr('class', 'dm-clab' + (c.lit ? '' : ' quiet'));
-      txt.append('tspan').text(c.name);
-      if (ab && c.n) txt.append('tspan').attr('class', 'ct').text(c.n);
-      if (ab)
-        g.on('click', (ev: MouseEvent) => {
-          ev.stopPropagation();
-          selectCityNode(c);
-        });
-      return { c, g: g.node()!, hit: hit.node()!, circ: circ.node()!, txt: txt.node()!, ct: txt.select('tspan.ct').node() as SVGTSpanElement | null };
-    }).reverse();
+    const list = ab ? cityList.filter((c) => c.state === ab) : cityList.filter((c) => !(phone && OFFSHORE.has(c.state)));
+    cityEls = list.map((c) => ({ c, el: null }));
     relayout();
     emit();
-    if (!instant && ab)
-      cityEls.forEach((e, i) => {
-        d3.select(e.g)
+    if (!instant && ab) {
+      let i = 0;
+      cityEls.forEach((e) => {
+        if (!e.el) return;
+        d3.select(e.el.g)
           .style('opacity', 0)
           .transition()
-          .delay(dur(60 + Math.min(i, 12) * 40))
+          .delay(dur(60 + Math.min(i++, 12) * 40))
           .duration(dur(360))
           .style('opacity', 1);
       });
+    }
+  }
+
+  function makeCityEl(c: CityNode): CityEl {
+    const ab = scope;
+    const g = (c.lit ? gLit : gQuiet)
+      .append('g')
+      .attr('class', 'dm-cityg' + (c.lit ? ' lit' : '') + (ab ? ' hot' : ''))
+      .attr('transform', `translate(${c.xy[0]},${c.xy[1]})`);
+    const hit = g.append('circle').attr('class', 'dm-chit');
+    const lhit = g.append('rect').attr('class', 'dm-lhit');
+    const circ = g.append('circle').attr('class', 'dm-city' + (c.lit ? '' : ' quiet'));
+    const txt = g.append('text').attr('class', 'dm-clab' + (c.lit ? '' : ' quiet'));
+    txt.append('tspan').text(c.name);
+    if (ab && c.n) txt.append('tspan').attr('class', 'ct').text(c.n);
+    if (ab)
+      g.on('click', (ev: MouseEvent) => {
+        ev.stopPropagation();
+        selectCityNode(c);
+      });
+    if (city) {
+      g.classed('sel', c === city);
+      g.classed('faint', city.n > 0 && c !== city && !isConnected(c));
+    }
+    return { c, g: g.node()!, hit: hit.node()!, lhit: lhit.node()!, circ: circ.node()!, txt: txt.node()!, ct: txt.select('tspan.ct').node() as SVGTSpanElement | null };
   }
 
   const isConnected = (other: CityNode) => !!city && bundles.some((b) => b.other.key === other.key);
@@ -493,8 +550,9 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
     city = c;
     drawBundles();
     cityEls.forEach((e) => {
-      e.g.classList.toggle('sel', e.c === c);
-      e.g.classList.toggle('faint', c.n > 0 && e.c !== c && !isConnected(e.c));
+      if (!e.el) return;
+      e.el.g.classList.toggle('sel', e.c === c);
+      e.el.g.classList.toggle('faint', c.n > 0 && e.c !== c && !isConnected(e.c));
     });
     relayout();
     emit();
@@ -503,7 +561,7 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
     if (!city) return;
     city = null;
     bundles = [];
-    cityEls.forEach((e) => e.g.classList.remove('sel', 'faint'));
+    cityEls.forEach((e) => e.el?.g.classList.remove('sel', 'faint'));
     gRoutes.selectAll('*').interrupt().transition().duration(dur(180)).style('opacity', 0).remove();
     gConts.selectAll('*').interrupt().transition().duration(dur(180)).style('opacity', 0).remove();
     relayout();
@@ -573,36 +631,50 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
     const fr = frame();
     const u = 1 / fr.s / k;
     const placed = level === 'country' ? layoutNumbers() : [];
+    // a phone frame is a third the width, so it earns a third of the names
+    const crowd = phone ? 3 : 1;
     const fontPx = 12.5,
-      labelMin = 900000 / (k * k),
-      dotMin = 300000 / (k * k);
-    cityEls.forEach((e) => {
-      const c = e.c;
+      labelMin = (900000 * crowd) / (k * k),
+      dotMin = (300000 * crowd) / (k * k);
+    const inFrame = (r: number[]) => r[0] >= 2 && r[2] <= fr.w - 2;
+    cityEls.forEach((entry) => {
+      const c = entry.c;
       const sx = fr.ox + (tx + k * c.xy[0]) * fr.s;
       const sy = fr.oy + (ty + k * c.xy[1]) * fr.s;
       const onScreen = sx > -40 && sx < fr.w + 40 && sy > -20 && sy < fr.h + 20;
       let label = false,
         side = 1;
+      const w = fontPx * 0.56 * (c.name.length + (scope && c.n ? String(c.n).length + 1.4 : 0)) + 6;
       if (onScreen && (c === city || c.pop >= (c.lit ? labelMin / 6 : labelMin))) {
-        const w = fontPx * 0.56 * (c.name.length + (e.ct ? String(c.n).length + 1.4 : 0)) + 6;
         const right = [sx + 4, sy - 8, sx + 8 + w, sy + 8];
         const left = [sx - 8 - w, sy - 8, sx - 4, sy + 8];
-        if (!placed.some((q) => overlaps(q, right))) {
+        if (inFrame(right) && !placed.some((q) => overlaps(q, right))) {
           placed.push(right);
           label = true;
-        } else if (!placed.some((q) => overlaps(q, left))) {
+        } else if (inFrame(left) && !placed.some((q) => overlaps(q, left))) {
           placed.push(left);
           label = true;
           side = -1;
         }
       }
       const dot = onScreen && (c.lit || label || c.pop >= dotMin);
-      e.g.style.display = dot ? '' : 'none';
-      if (!dot) return;
+      if (!dot) {
+        if (entry.el) entry.el.g.style.display = 'none';
+        return;
+      }
+      if (!entry.el) entry.el = makeCityEl(c);
+      const e = entry.el;
+      e.g.style.display = '';
       e.circ.setAttribute('r', String((c.lit ? 3.4 : 2.3) * u));
       e.hit.setAttribute('r', String((c.lit ? 14 : 8) * u));
       e.txt.style.display = label ? '' : 'none';
+      e.lhit.style.display = label ? '' : 'none';
       if (label) {
+        // the name is part of the button: a transparent box behind it takes the tap
+        e.lhit.setAttribute('x', String(side > 0 ? 4 * u : -(4 + w) * u));
+        e.lhit.setAttribute('y', String(-10 * u));
+        e.lhit.setAttribute('width', String(w * u));
+        e.lhit.setAttribute('height', String(20 * u));
         e.txt.setAttribute('x', String(side * 7 * u));
         e.txt.setAttribute('text-anchor', side > 0 ? 'start' : 'end');
         e.txt.setAttribute('y', String(4 * u));
@@ -647,7 +719,7 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
 
   function hintFor(): ViewState['hint'] {
     const how = isPhone() ? 'Pinch' : 'Pinch or Ctrl+scroll';
-    if (level === 'country') return { text: `${how} for more towns. Open a state to press its cities.` };
+    if (level === 'country') return { text: `${how} for more towns. Press a state, or search for a place below.` };
     if (city) return { strong: city.name, text: `: ${bundles.length} ${bundles.length === 1 ? 'connection' : 'connections'} drawn. Press the state or Esc to clear.` };
     const n = cityEls.filter((e) => e.c.n).length;
     return n
@@ -675,6 +747,40 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
     b.path.classed('sel', true);
   }
 
+  // ---------- go somewhere by name ----------
+  let pending: { abbr: string; cityKey?: string } | null = null;
+  function goTo(abbr: string, cityKey?: string) {
+    const f = byAbbr[abbr];
+    if (!f) return;
+    const pressCity = () => {
+      if (!cityKey) return;
+      const c = cityEls.find((e) => e.c.key === cityKey)?.c;
+      if (c) selectCityNode(c);
+    };
+    if (level === 'state' && scope === abbr) {
+      pressCity();
+      return;
+    }
+    pending = { abbr, cityKey };
+    if (level === 'state') closeState();
+    else openState(f);
+  }
+  // the transitions call this when they land
+  function settle() {
+    if (!pending) return;
+    const p = pending;
+    if (level === 'country') {
+      pending = { abbr: p.abbr, cityKey: p.cityKey };
+      openState(byAbbr[p.abbr]);
+      return;
+    }
+    pending = null;
+    if (p.cityKey) {
+      const c = cityEls.find((e) => e.c.key === p.cityKey)?.c;
+      if (c) selectCityNode(c);
+    }
+  }
+
   // ---------- first paint ----------
   opts.root.dataset.level = 'country';
   buildDetail(true);
@@ -684,6 +790,7 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
     openState: (ab) => {
       if (level === 'country' && byAbbr[ab]) openState(byAbbr[ab]);
     },
+    goTo,
     closeState,
     selectCity: (key) => {
       const c = cityEls.find((e) => e.c.key === key)?.c;
@@ -697,6 +804,7 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
       destroyed = true;
       document.removeEventListener('keydown', onKey);
       removeEventListener('resize', onResize);
+      darkMq.removeEventListener('change', onTheme);
       svg.on('.zoom', null);
       svg.selectAll('*').interrupt().remove();
     },

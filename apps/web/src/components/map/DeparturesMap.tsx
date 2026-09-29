@@ -22,6 +22,7 @@ import {
   type PublicActivity,
 } from '@/lib/map/data';
 import { createEngine, type Bundle, type CityNode, type Engine, type ViewState } from '@/lib/map/engine';
+import { PlaceSearch } from './PlaceSearch';
 
 type Selected = { item: MapItem; bundle?: undefined } | { bundle: Bundle; item?: undefined } | null;
 
@@ -45,7 +46,16 @@ export function DeparturesMap() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<ViewState>({ level: 'country', state: null, city: null, bundles: [], hint: { text: '' } });
   const [selected, setSelected] = useState<Selected>(null);
-  const [mobileStates, setMobileStates] = useState<{ abbr: string; name: string; n: number }[]>([]);
+  const [phone, setPhone] = useState(false);
+  const [statesActive, setStatesActive] = useState(0);
+
+  useEffect(() => {
+    const mq = matchMedia('(max-width: 720px)');
+    const sync = () => setPhone(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
 
   // activity: full rows for members, the address-free RPC for everyone else
   useEffect(() => {
@@ -79,6 +89,7 @@ export function DeparturesMap() {
     if (!data || !items || !svgRef.current || !rootRef.current || !stageRef.current || !hoverRef.current) return;
     const engine = createEngine(svgRef.current, data, {
       items,
+      phone,
       root: rootRef.current,
       stage: stageRef.current,
       hover: hoverRef.current,
@@ -92,16 +103,12 @@ export function DeparturesMap() {
       },
     });
     engineRef.current = engine;
-    setMobileStates(
-      engine.states
-        .map((s) => ({ ...s, n: engine.counts[s.abbr] || 0 }))
-        .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name))
-    );
+    setStatesActive(Object.keys(engine.counts).length);
     return () => {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [data, items]);
+  }, [data, items, phone]);
 
   const closeBar = useCallback(() => {
     setSelected(null);
@@ -117,7 +124,6 @@ export function DeparturesMap() {
   };
 
   const requestsTotal = items?.filter((i) => i.kind === 'request').length ?? 0;
-  const statesActive = engineRef.current ? Object.keys(engineRef.current.counts).length : 0;
   const st = view.state;
   const city = view.city;
 
@@ -179,21 +185,17 @@ export function DeparturesMap() {
         <div ref={hoverRef} className="dm-hover" />
       </div>
 
-      {/* phone: the country as a ranked list */}
-      <div className="dm-mobile border-t border-ink">
-        {mobileStates.map((s) => (
-          <button
-            key={s.abbr}
-            type="button"
-            onClick={() => engineRef.current?.openState(s.abbr)}
-            className="grid w-full grid-cols-[44px_1fr_auto] items-baseline gap-3 border-b border-line py-3.5 text-left"
-          >
-            <span className="text-[12px] font-semibold tracking-[0.1em] text-steel">{s.abbr}</span>
-            <span className="text-[16px] font-semibold tracking-[-0.02em]">{s.name}</span>
-            <span className={`tnum text-[16px] ${s.n ? 'font-semibold' : 'font-medium text-steel'}`}>{s.n || ''}</span>
-          </button>
-        ))}
-      </div>
+      {/* find a place the map is not showing at this zoom */}
+      {data && (
+        <div className="mt-3">
+          <PlaceSearch
+            cities={data.cities}
+            states={engineRef.current?.states ?? []}
+            counts={engineRef.current?.counts ?? {}}
+            onPick={(abbr, cityKey) => engineRef.current?.goTo(abbr, cityKey)}
+          />
+        </div>
+      )}
 
       {/* under the map */}
       <div className="mt-2">
