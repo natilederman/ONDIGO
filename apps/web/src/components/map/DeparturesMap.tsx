@@ -145,7 +145,6 @@ export function DeparturesMap() {
         <div className="flex flex-col items-start gap-2.5 sm:items-end sm:pb-1">
           {view.level === 'country' ? (
             <>
-              <span className={LABEL}>Want to come along?</span>
               <div className="flex items-center gap-3">
                 <Link href="/trips/new" className={`${PILL} border-line-strong hover:border-ink`}>
                   Post a trip
