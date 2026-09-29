@@ -373,7 +373,8 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
       cy = (y0 + y1) / 2;
     const VH = viewH();
     svg.attr('viewBox', `0 0 ${W} ${VH}`);
-    const K = Math.min(10, 0.86 / Math.max(dx / W, dy / VH));
+    // small states need more than 10x on a phone, where the lower 48 fill the same box
+    const K = Math.min(18, 0.86 / Math.max(dx / W, dy / VH));
     const TX = W / 2 - K * cx;
     const TY = VH / 2 - K * cy;
 
