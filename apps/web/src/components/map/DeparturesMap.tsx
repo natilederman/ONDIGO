@@ -133,7 +133,7 @@ export function DeparturesMap() {
       <div className="flex flex-col items-start justify-between gap-5 pb-4 sm:flex-row sm:items-end sm:gap-8">
         <div>
           <h1 className="text-[clamp(1.7rem,3vw,2.5rem)] font-semibold leading-[1.06] tracking-display text-balance sm:whitespace-nowrap">
-            {st ? st.name : 'The journey you’re already taking.'}
+            {st ? st.name : 'The journey someone’s already making.'}
           </h1>
           <p className="mt-3 max-w-[54ch] text-[17px] leading-relaxed text-muted">
             {st
