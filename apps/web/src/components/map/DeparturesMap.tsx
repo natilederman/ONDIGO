@@ -138,7 +138,7 @@ export function DeparturesMap() {
           <p className="mt-3 max-w-[54ch] text-[17px] leading-relaxed text-muted">
             {st
               ? `${st.requests} open ${st.requests === 1 ? 'request' : 'requests'} leaving ${st.name}, ${st.trips} driver ${st.trips === 1 ? 'trip' : 'trips'} touching it. Press a city to see its deliveries.`
-              : 'Drivers already heading your way carry what you need moved. Sending anything becomes as easy, and as safe, as asking a friend.'}
+              : 'Post what you need moved, and a driver already making that trip takes it along. It’s as easy, and as safe, as asking a friend.'}
             {st && !signedIn && ' Log in to see prices and who is driving.'}
           </p>
         </div>
