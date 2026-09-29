@@ -65,7 +65,7 @@ export function Navbar() {
           {/* the whole site is a demonstration; say so where every page can see it */}
           <span
             title="Demo, not a working service"
-            className="ml-1 whitespace-nowrap border border-signal/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-signal sm:ml-2"
+            className="ml-1 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.1em] text-signal sm:ml-2"
           >
             <span className="sm:hidden">Demo</span>
             <span className="hidden sm:inline">Demo, not a working service</span>
