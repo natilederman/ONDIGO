@@ -132,44 +132,34 @@ export function DeparturesMap() {
       {/* lead */}
       <div className="flex flex-col items-start justify-between gap-5 pb-4 sm:flex-row sm:items-end sm:gap-8">
         <div>
-          <h1 className="max-w-[26ch] text-[clamp(1.5rem,2.4vw,1.95rem)] font-semibold leading-[1.1] tracking-display text-balance">
-            {st ? st.name : 'Where things need collecting from.'}
+          <h1 className="max-w-[22ch] text-[clamp(1.7rem,3vw,2.5rem)] font-semibold leading-[1.06] tracking-display text-balance">
+            {st ? st.name : 'Send it with someone already on the road.'}
           </h1>
-          <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-muted">
+          <p className="mt-3 max-w-[54ch] text-[15.5px] leading-relaxed text-muted">
             {st
               ? `${st.requests} open ${st.requests === 1 ? 'request' : 'requests'} leaving ${st.name}, ${st.trips} driver ${st.trips === 1 ? 'trip' : 'trips'} touching it. Press a city to see its deliveries.`
-              : 'Each number is an open request leaving that state. Open a state, then press a city to see what leaves and arrives there.'}
-            {!signedIn && ' Log in to see prices and who is driving.'}
+              : 'Post what needs to move and drivers already heading that way bid to carry it, with photos at both doors and the money held until it arrives. Driving somewhere with room to spare? Post the trip and get paid for the empty seat.'}
+            {st && !signedIn && ' Log in to see prices and who is driving.'}
           </p>
         </div>
-        <div className="flex flex-col items-start gap-3 sm:items-end">
+        <div className="flex flex-col items-start gap-2.5 sm:items-end sm:pb-1">
           {view.level === 'country' ? (
-            <div className="flex items-center gap-3">
-              <Link href="/trips/new" className={`${PILL} border-line-strong hover:border-ink`}>
-                Post a trip
-              </Link>
-              <Link href="/requests/new" className={`${PILL} border-ink bg-ink text-paper`}>
-                Post a request
-              </Link>
-            </div>
+            <>
+              <span className={LABEL}>Want to come along?</span>
+              <div className="flex items-center gap-3">
+                <Link href="/trips/new" className={`${PILL} border-line-strong hover:border-ink`}>
+                  Post a trip
+                </Link>
+                <Link href="/requests/new" className={`${PILL} border-ink bg-ink text-paper`}>
+                  Post a request
+                </Link>
+              </div>
+            </>
           ) : (
             <button type="button" onClick={() => engineRef.current?.closeState()} className={`${PILL} border-line-strong text-muted hover:border-ink`}>
               All states
             </button>
           )}
-          <div className="text-left sm:text-right">
-            {view.level === 'state' && (
-              <div className="dm-legend flex items-center gap-4 text-[12px] text-steel sm:justify-end">
-                <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.6px] border-ink" /> Request</span>
-                <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.2px] border-dashed border-steel" /> Driver trip</span>
-                <span className="flex items-center gap-2"><i className="font-bold tracking-[2px] text-steel">···</i> continues out of state</span>
-              </div>
-            )}
-            <div className="dm-hint mt-1 text-[12.5px] text-muted">
-              {view.hint.strong && <b className="font-semibold text-ink">{view.hint.strong}</b>}
-              {view.hint.text}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -183,6 +173,20 @@ export function DeparturesMap() {
           {error && <p className="-mt-[40%] text-center text-[13px] text-signal">{error}</p>}
         </div>
         <div ref={hoverRef} className="dm-hover" />
+      </div>
+      <div className="mt-2 flex flex-col gap-1.5 text-[12.5px] text-muted sm:flex-row sm:items-baseline sm:justify-between">
+        <div className="dm-hint">
+          {view.hint.strong && <b className="font-semibold text-ink">{view.hint.strong}</b>}
+          {view.hint.text}
+          {view.level === 'country' && !signedIn && <span> Log in to see prices and who is driving.</span>}
+        </div>
+        {view.level === 'state' && (
+          <div className="dm-legend flex items-center gap-4 whitespace-nowrap text-[12px] text-steel">
+            <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.6px] border-ink" /> Request</span>
+            <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.2px] border-dashed border-steel" /> Driver trip</span>
+            <span className="flex items-center gap-2"><i className="font-bold tracking-[2px] text-steel">···</i> continues out of state</span>
+          </div>
+        )}
       </div>
 
       {/* find a place the map is not showing at this zoom */}
