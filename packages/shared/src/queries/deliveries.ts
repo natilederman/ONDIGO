@@ -86,3 +86,32 @@ export function subscribeToDelivery(client: OndigoClient, id: string, onChange: 
     client.removeChannel(channel);
   };
 }
+
+/** Your own deliveries with the route and item, for your profile. */
+export type MyDeliveryRow = Delivery & {
+  request: { pickup_text: string; dropoff_text: string; item_description: string } | null;
+};
+export async function listMyDeliveriesWithRoute(client: OndigoClient, userId: string): Promise<MyDeliveryRow[]> {
+  const { data, error } = await client
+    .from('deliveries')
+    .select('*, request:delivery_requests(pickup_text, dropoff_text, item_description)')
+    .or(`driver_id.eq.${userId},sender_id.eq.${userId}`)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data as unknown as MyDeliveryRow[]) ?? [];
+}
+
+/** Anyone's completed deliveries, city level only: no street, item or price. */
+export type PublicDeliveryRecord = {
+  delivery_id: string;
+  role: 'carried' | 'sent';
+  completed_at: string | null;
+  plat: number; plng: number; dlat: number; dlng: number;
+  category: string | null;
+  rating: number | null;
+};
+export async function publicDeliveryRecord(client: OndigoClient, userId: string): Promise<PublicDeliveryRecord[]> {
+  const { data, error } = await client.rpc('public_delivery_record' as never, { p_user: userId } as never);
+  if (error) throw error;
+  return (data as unknown as PublicDeliveryRecord[]) ?? [];
+}

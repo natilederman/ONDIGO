@@ -15,6 +15,7 @@ import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
 import { StarRating } from '@/components/StarRating';
+import { ProfileDeliveries } from '@/components/ProfileDeliveries';
 
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -78,6 +79,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
       {profile.vehicle_type && <Badge>{profile.vehicle_type}</Badge>}
       {profile.bio && <p className="text-sm">{profile.bio}</p>}
+
+      <ProfileDeliveries userId={id} isSelf={isSelf} firstName={profile.full_name.split(' ')[0]} />
 
       <div>
         <h2 className="mb-2 font-semibold">Reviews</h2>
