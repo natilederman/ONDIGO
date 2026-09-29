@@ -133,12 +133,12 @@ export function DeparturesMap() {
       <div className="flex flex-col items-start justify-between gap-5 pb-4 sm:flex-row sm:items-end sm:gap-8">
         <div>
           <h1 className="max-w-[22ch] text-[clamp(1.7rem,3vw,2.5rem)] font-semibold leading-[1.06] tracking-display text-balance">
-            {st ? st.name : 'Send it with someone already on the road.'}
+            {st ? st.name : 'The journey you’re already taking.'}
           </h1>
           <p className="mt-3 max-w-[54ch] text-[15.5px] leading-relaxed text-muted">
             {st
               ? `${st.requests} open ${st.requests === 1 ? 'request' : 'requests'} leaving ${st.name}, ${st.trips} driver ${st.trips === 1 ? 'trip' : 'trips'} touching it. Press a city to see its deliveries.`
-              : 'Post what needs to move and drivers already heading that way bid to carry it, with photos at both doors and the money held until it arrives. Driving somewhere with room to spare? Post the trip and get paid for the empty seat.'}
+              : 'Drivers already heading your way carry what you need moved. Sending anything becomes as easy, and as safe, as asking a friend.'}
             {st && !signedIn && ' Log in to see prices and who is driving.'}
           </p>
         </div>
