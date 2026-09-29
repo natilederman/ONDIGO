@@ -39,3 +39,17 @@ export type DriverSummary = Pick<
   Profile,
   'id' | 'full_name' | 'avatar_url' | 'vehicle_type' | 'rating_avg' | 'rating_count'
 >;
+
+// ---- trust ladder (migration 11) ----
+export type VerificationTier = Enums['verification_tier'];
+export type VerificationKind = Enums['verification_kind'];
+export type VerificationStatus = Enums['verification_status'];
+export type ItemCategory = Enums['item_category'];
+export type Verification = Tables['verifications']['Row'];
+export type VerificationDocument = Tables['verification_documents']['Row'];
+export type Vehicle = Tables['vehicles']['Row'];
+export type ProfilePrivate = Tables['profile_private']['Row'];
+export type PolicyDocument = Tables['policy_documents']['Row'];
+export type ProhibitedItemRule = Tables['prohibited_item_rules']['Row'];
+export type Consent = Tables['consents']['Row'];
+export type DriverPublicTrust = Database['public']['Functions']['get_public_trust']['Returns'][number];

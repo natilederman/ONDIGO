@@ -11,6 +11,8 @@ export * as tripQueries from './queries/trips';
 export * as requestQueries from './queries/requests';
 export * as bidQueries from './queries/bids';
 export * as deliveryQueries from './queries/deliveries';
+export * as verificationQueries from './queries/verification';
+export type { QueueItem } from './queries/verification';
 export * as messageQueries from './queries/messages';
 export * as trackingQueries from './queries/tracking';
 export * as reviewQueries from './queries/reviews';

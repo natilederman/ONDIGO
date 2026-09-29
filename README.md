@@ -10,6 +10,17 @@ Supabase backend they both talk to.
 
 The web app runs Next 15 on React 19.1.0, the same React the Expo app uses, so the workspace hoists a single copy. Root `package.json` pins that with `overrides`; do not add a second React version to either app. Dynamic pages read `params` with React's `use()`, as Next 15 requires. `npm run build:web` passes.
 
+## Trust ladder (Phase A)
+
+Sign-up stays a one-minute act; the expensive check happens at the bid. `profiles.verification_tier` moves none → contactable → identified → road_ready → screened → payable and is recomputed from evidence by triggers (migration 11). `place_bid()`, `accept_fixed_price_request()`, `accept_bid()` and the auction sweep all call `assert_can_take()`; the request page asks `why_cannot_take_request()` and shows the sentence with a link to `/verify`.
+
+- `/verify` is the person's page: phone code (needs an SMS provider configured in Supabase Auth), emergency contact and date of birth, the three policies to accept, ID + selfie upload, licence + insurance + vehicle upload. Everything uploads to the private `verification-documents` bucket and is purged after 90 days by pg_cron; only the outcome and date stay.
+- `/admin/verifications` is the reviewer queue (`profiles.is_admin`). `alice@ondigo.test` is the reviewer on the hosted project. Rejections require a reason the person reads.
+- Requests now carry `declared_value`, `declared_category`, `contents`, `open_box_required` and `vehicle_type_required` (weight → bike ≤ 10 kg, car ≤ 50 kg, truck). `platform_settings` holds the $1,000 threshold, the $10,000 ceiling, the $250 cap and the ages (18 courier, 21 driver). Whole-household moves are refused at insert.
+- The prohibited-items list and the policy texts live in `prohibited_item_rules` and `policy_documents`; acceptances in `consents`, versioned.
+- Demo accounts carry `provider = 'demo'` records (`supabase/seed_verification_demo.sql`); the badge says so in words. The mobile app is not yet updated for Phase A: its bids hit the same gate and see the server's sentence.
+- Phase B (Stripe Identity, Checkr with the FCRA hold, Stripe Connect) and Phase C (custody attribution, PIN, disputes, appeals, double-blind reviews) follow the approved plan in `reports/ONDIGO driver sign-up and verification plan.pdf`.
+
 ## Homepage map
 
 The homepage is a map of the United States with the number of open requests leaving each state. Open a state, press a city, and the list underneath shows what leaves and arrives there.

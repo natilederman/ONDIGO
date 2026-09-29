@@ -9,6 +9,7 @@ const links = [
   { href: '/trips', label: 'Trips' },
   { href: '/requests', label: 'Requests' },
   { href: '/deliveries', label: 'Deliveries' },
+  { href: '/verify', label: 'Get ready to carry' },
 ];
 
 export function Navbar() {
@@ -61,11 +62,15 @@ export function Navbar() {
           <Link href="/" className="text-[15px] font-bold tracking-[0.18em] whitespace-nowrap">
             ONDIGO
           </Link>
+          {/* the whole site is a demonstration; say so where every page can see it */}
+          <span className="ml-1 whitespace-nowrap border border-signal/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-signal sm:ml-2">
+            Demo, not a working service
+          </span>
         </div>
 
         {user && (
           <nav className="hidden gap-7 sm:flex">
-            {links.map((l) => {
+            {[...links, ...(profile?.is_admin ? [{ href: '/admin/verifications', label: 'Review queue' }] : [])].map((l) => {
               const active = pathname?.startsWith(l.href);
               return (
                 <Link
@@ -116,7 +121,7 @@ export function Navbar() {
         className="absolute inset-x-0 top-16 border-b border-ink bg-paper shadow-[0_24px_40px_-24px_rgba(0,0,0,0.25)] sm:hidden"
       >
         <nav aria-label="Main">
-          {links.map((l) => {
+          {[...links, ...(profile?.is_admin ? [{ href: '/admin/verifications', label: 'Review queue' }] : [])].map((l) => {
             const active = pathname?.startsWith(l.href);
             return (
               <Link key={l.href} href={l.href} aria-current={active ? 'page' : undefined} className={row}>

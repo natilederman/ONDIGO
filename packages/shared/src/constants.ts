@@ -17,3 +17,33 @@ export const EMERGENCY_CONTACT = {
 
 export const LEGAL_DECLARATION_TEXT =
   'I confirm this item is not illegal, hazardous, or a prohibited good, and I accept full liability for its contents.';
+
+/** Plain words for each rung of the trust ladder, in order. */
+export const TIER_LABELS: Record<string, { label: string; unlocks: string }> = {
+  none: { label: 'Account', unlocks: 'Browse requests, trips and profiles' },
+  contactable: { label: 'Contactable', unlocks: 'Post a trip or a request, message on a delivery' },
+  identified: { label: 'Identified', unlocks: 'Bid and carry items up to 10 kg' },
+  road_ready: { label: 'Road ready', unlocks: 'Bid on car and truck jobs' },
+  screened: { label: 'Screened', unlocks: 'Jobs above the value threshold' },
+  payable: { label: 'Payable', unlocks: 'Receive payouts' },
+};
+
+export const ITEM_CATEGORIES: { value: string; label: string }[] = [
+  { value: 'boxes_parcels', label: 'Boxes and parcels' },
+  { value: 'furniture', label: 'Furniture' },
+  { value: 'appliances', label: 'Appliances' },
+  { value: 'electronics', label: 'Electronics' },
+  { value: 'sports_outdoor', label: 'Sports and outdoor' },
+  { value: 'instruments', label: 'Musical instruments' },
+  { value: 'art_fragile', label: 'Art and fragile pieces' },
+  { value: 'documents', label: 'Documents' },
+  { value: 'vehicle_parts', label: 'Vehicle parts and tyres' },
+  { value: 'plants_garden', label: 'Plants and garden' },
+  { value: 'other', label: 'Something else' },
+  { value: 'household_move', label: 'A whole-household move' },
+];
+
+/** Which drivers may take an item of this weight: any courier, a car, or a truck. */
+export function vehicleClassForWeight(kg: number): 'bike' | 'car' | 'truck' {
+  return kg <= 10 ? 'bike' : kg <= 50 ? 'car' : 'truck';
+}

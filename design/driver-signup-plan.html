@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ONDIGO driver sign-up and verification plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 13mm 15mm 15mm; }
+  :root { --ink:#0a0b0d; --steel:#6a6f77; --steel2:#55595f; --rule:#dcdde0; --ash:#f4f4f5; --signal:#d92c1f; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; color:var(--ink); font-family:'Archivo', -apple-system, 'Segoe UI', sans-serif; font-size:9.8pt; line-height:1.4; font-feature-settings:"tnum" 1; }
+  h1 { font-size:26pt; font-weight:600; letter-spacing:-.03em; line-height:1.08; margin:0 0 6pt; }
+  h2 { font-size:14pt; font-weight:600; letter-spacing:-.02em; margin:14pt 0 8pt; padding-top:6pt; border-top:1.5pt solid var(--ink); }
+  h3 { font-size:10.4pt; font-weight:600; margin:12pt 0 4pt; text-transform:uppercase; letter-spacing:.08em; color:var(--steel2); }
+  p { margin:0 0 7pt; }
+  .muted { color:var(--steel2); }
+  .small { font-size:9pt; color:var(--steel); line-height:1.4; }
+  .k { font-size:8.5pt; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--steel); }
+  .page { page-break-after: auto; }
+  .cover { page-break-after: always; }
+  .fresh { page-break-before: always; }
+  h2 { page-break-after: avoid; }
+  h3 { page-break-after: avoid; }
+  table, .cols, .callout { page-break-inside: auto; }
+  thead { display: table-header-group; }
+  table { width:100%; border-collapse:collapse; margin:4pt 0 8pt; font-size:8.7pt; line-height:1.3; }
+  th { text-align:left; font-weight:600; font-size:8.5pt; letter-spacing:.08em; text-transform:uppercase; color:var(--steel); padding:0 6pt 5pt 0; border-bottom:1pt solid var(--ink); vertical-align:bottom; }
+  td { padding:4.2pt 6pt 4.2pt 0; border-bottom:.6pt solid var(--rule); vertical-align:top; }
+  td:last-child, th:last-child { padding-right:0; }
+  tr { page-break-inside: avoid; }
+  .tag { display:inline-block; border:.8pt solid var(--ink); padding:0 4pt; font-size:8pt; font-weight:600; letter-spacing:.06em; text-transform:uppercase; border-radius:99pt; white-space:nowrap; }
+  .tag.fill { background:var(--ink); color:#fff; }
+  .tag.red { border-color:var(--signal); color:var(--signal); }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:18pt; }
+  .box { border-top:1pt solid var(--ink); padding-top:6pt; }
+  .num { font-size:20pt; font-weight:600; letter-spacing:-.03em; line-height:1; }
+  .lead { font-size:12pt; line-height:1.45; max-width:62ch; color:var(--steel2); }
+  ul { margin:0 0 7pt 14pt; padding:0; } li { margin-bottom:3pt; }
+  .step { display:grid; grid-template-columns:34pt 1fr; gap:10pt; padding:8pt 0; border-bottom:.6pt solid var(--rule); page-break-inside:avoid; }
+  .step .n { font-size:18pt; font-weight:600; letter-spacing:-.03em; line-height:1; color:var(--ink); }
+  .step b { font-weight:600; }
+  .foot { position:running(foot); }
+  .cover-meta { display:flex; gap:28pt; margin-top:16pt; padding-top:8pt; border-top:1pt solid var(--ink); font-size:9pt; color:var(--steel2); }
+  .callout { border-left:2pt solid var(--ink); padding:2pt 0 2pt 10pt; margin:8pt 0 10pt; }
+  .decision { display:grid; grid-template-columns:22pt 1fr; gap:8pt; padding:4.6pt 0; border-bottom:.6pt solid var(--rule); page-break-inside:avoid; }
+  .decision .n { font-weight:600; }
+  .decision .rec { color:var(--steel2); }
+  .decision .rec b { color:var(--ink); font-weight:600; }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 ============ -->
+<section class="page cover">
+  <div class="k">ONDIGO · For approval · 29 September 2026</div>
+  <h1 style="margin-top:10pt">Driver sign-up and verification.<br>What we ask, when, and why.</h1>
+  <p class="lead">A proposal for how a stranger becomes someone who may carry another stranger's things on ONDIGO: the sign-up flow, the documents and checks, the laws that force each step, the policies we must publish, what it costs per driver, and the decisions only you can make. Nothing is built yet.</p>
+
+  <div class="cover-meta">
+    <div><span class="k">Built on</span><br>The four ONDIGO research briefs from the "ondigo research" session (27–28 Sep 2026): supply onboarding, supply-side gap analysis, reverse auctions, competitor landscape</div>
+    <div><span class="k">Checked again today</span><br>FMCSA authority, state mover permits, personal-auto exclusions, Prop 22, FCRA, 2026 tax thresholds, biometric-consent law</div>
+    <div><span class="k">Status</span><br>Describes published obligations and incumbent practice. Not legal advice; counsel should review before launch.</div>
+  </div>
+
+  <h3 style="margin-top:22pt">The one idea</h3>
+  <p><b>The expensive check happens at the bid, not at sign-up.</b> Every incumbent that cares about conversion (Airbnb, Turo, Fiverr, Upwork) puts identity verification at the moment of irreversibility. For ONDIGO that moment is a bid: an offer to take custody of someone's property. Signing up stays a one-minute act. Browsing costs nothing. Posting needs a confirmed phone. Bidding needs a verified identity. Carrying with a vehicle needs a licence, insurance and the vehicle on file. Expensive jobs need a criminal and driving-record check. Getting paid needs tax identity. Each step is paid for by the step before it.</p>
+
+  <div class="cols" style="margin-top:14pt">
+    <div class="box"><div class="num">6</div><div class="small">trust tiers, in one enum, each unlocking one thing</div></div>
+    <div class="box"><div class="num">$1.50</div><div class="small">to identify a driver (ID + selfie). Most drivers stop here</div></div>
+    <div class="box"><div class="num">$41–70</div><div class="small">loaded cost of a fully screened driver (criminal + driving record)</div></div>
+    <div class="box"><div class="num">10</div><div class="small">decisions that need your answer before building (last page)</div></div>
+  </div>
+
+  <h3 style="margin-top:18pt">Where ONDIGO is today</h3>
+  <p>Sign-up collects a name, email, password and an optional vehicle type. Email confirmation is now on (hosted project). A phone column exists but nothing verifies it. There is no identity check, no document, no licence, no insurance, no background check, no emergency contact, no prohibited-items list a driver could point to, no declared item value, no dispute form, no way to suspend anyone, and <code>place_bid()</code> checks only that the price is lower than the current one. Anyone with an email address can win custody of a mattress.</p>
+  <p class="small">Two failure modes have cost comparable companies real money, and they are opposites: overstating what screening does (Uber, at least $10M, a false-advertising theory) and banning people on bad data with no appeal (Airbnb's vendor, a dozen lawsuits; NYC's $5M settlement and 10,000 reinstatements in Jan 2026). This plan is designed to avoid both at once: check what matters, say exactly what was checked, and give every decision a stated reason and an appeal.</p>
+</section>
+
+<!-- ============ PAGE 2: THE FLOW ============ -->
+<section class="page">
+  <h2 style="margin-top:0">1. The flow, as a driver lives it</h2>
+  <p class="muted">Each tier is a state in the database. A person moves up by completing the step; the app never asks for anything the next action does not need.</p>
+
+  <div class="step"><div class="n">0</div><div><b>Account</b> <span class="tag">today</span><br>Name, email, password. Confirm email. One minute. Unlocks: browse requests, trips, profiles and reviews. Post nothing.</div></div>
+
+  <div class="step"><div class="n">1</div><div><b>Contactable</b> <span class="tag">≈ $0.06</span><br>Phone number verified by SMS code. Emergency contact (name + phone). Unlocks: post a trip, post a request, edit profile, message on a delivery. This is the whole entry gate at Airtasker and Grabr. It is also the minimum needed to reach a courier who is holding goods.</div></div>
+
+  <div class="step"><div class="n">2</div><div><b>Identified</b> — before the first bid <span class="tag fill">the gate</span> <span class="tag">≈ $1.50</span><br>Government photo ID (front, back) and a live selfie, matched to the document and to the profile name; date of birth checked against the minimum age. Accept the versioned prohibited-items declaration and the independent-contractor terms. Vendor decision in minutes to two business days. Unlocks: place a bid, accept a fixed-price job, win a first delivery. Bike and on-foot couriers stop here, exactly as Uber Eats' loosest tier does.</div></div>
+
+  <div class="step"><div class="n">3</div><div><b>Road-ready</b> — before bidding on car, scooter or truck jobs <span class="tag">≈ $1.50 or manual</span><br>Driving licence (photo, expiry date; permanent, not a permit; held one year or more). Insurance card naming the driver and the vehicle's VIN, with expiry (Lyft's rule; it forecloses borrowing a friend's card). Vehicle: plate, make, model, year, one photo, registration. Unlocks: bids on jobs whose required vehicle class matches. This is a lawful-to-drive gate, not a cargo-cover gate; see section 3 on why the insurance card does not cover the activity.</div></div>
+
+  <div class="step"><div class="n">4</div><div><b>Screened</b> — before jobs above a declared value, or in flagged categories <span class="tag">≈ $40 loaded</span><br>FCRA disclosure and separate authorisation. Criminal records search (national databases plus county), sex-offender registry, sanctions lists. Motor vehicle record for drivers, run first because it rejects most applicants and costs a quarter of the criminal search. Adverse results go through pre-adverse notice, a five-business-day hold, then a final notice naming the reporting agency and the dispute route. Re-run yearly; continuous monitoring in between. Unlocks: high-value and flagged jobs.</div></div>
+
+  <div class="step"><div class="n">5</div><div><b>Payable</b> — before the first payout <span class="tag">processor KYC</span><br>Payout account through Stripe Connect Express: bank details, address, date of birth, SSN or TIN (W-9), Stripe's own identity requirements. Stripe caps payouts at $600 per 30 days without an address and $3,000 without a DOB, which is a defensible schedule to inherit rather than invent. Tax forms (1099-K, 1099-NEC) follow from this data. Unlocks: escrow release to the driver.</div></div>
+
+  <div class="step" style="border-bottom:0"><div class="n">∞</div><div><b>Ongoing</b><br>Selfie re-check every 14 days and before any high-value job (the cheapest control against rented accounts, which is the dominant fraud on delivery platforms). Expiry clocks on licence, insurance and ID. Completion rate over the last 20 assigned jobs, hidden below five. Deactivation only with a stated basis, evidence, and an appeal deadline; never automated without human review.</div></div>
+
+  <h3>The sender's path</h3>
+  <p>Senders reach <b>Contactable</b> to post. Above the same declared-value threshold that pushes a driver to Screened, a sender must be <b>Identified</b> too, because the sender is the party who can ship something prohibited, stolen, or worth ten times the declared value. Below that, front-loading ID on the demand side of a marketplace with no liquidity yet is the mistake the research warns against.</p>
+</section>
+
+<!-- ============ PAGE 3: CHECKLIST ============ -->
+<section class="page">
+  <h2>2. What we collect, how it is checked, how long we keep it</h2>
+  <div class="callout">
+    <p style="margin:0"><b>Retention rule.</b> Verify and discard. Document and selfie images stay with the vendor; ONDIGO keeps the outcome, the date and a reference. Anything we do hold gets a delete-after date enforced by a nightly job. This is what keeps the Illinois BIPA and Texas CUBI exposure small (CUBI penalties run to $25,000 per violation; BIPA lets each person sue) and it is what a data-protection regulator would ask for first.</p>
+  </div>
+  <table>
+    <thead><tr><th style="width:21%">Item</th><th style="width:15%">Tier</th><th>How it is verified</th><th style="width:22%">Kept as</th></tr></thead>
+    <tr><td>Email</td><td>Account</td><td>Confirmation link (Supabase). Already on.</td><td>Address</td></tr>
+    <tr><td>Phone</td><td>Contactable</td><td>SMS one-time code (Supabase auth SMS via Twilio Verify).</td><td>Number, verified-at</td></tr>
+    <tr><td>Emergency contact</td><td>Contactable</td><td>Self-declared; surfaced by the panic button alongside the platform line.</td><td>Name, phone</td></tr>
+    <tr><td>Government photo ID</td><td>Identified</td><td>Stripe Identity: document authenticity, expiry, data extraction, name match to profile, DOB against minimum age.</td><td>Provider reference, status, checked-at, document type, expiry, last 4. <b>Images not retained by us.</b></td></tr>
+    <tr><td>Selfie / liveness</td><td>Identified; re-checked</td><td>Stripe Identity face match with liveness. Written biometric consent captured first (Illinois, Texas, Washington law). Vendor holds the template; we hold the result and date.</td><td>Result, checked-at, expires-at</td></tr>
+    <tr><td>Prohibited-items declaration</td><td>Identified</td><td>Versioned text shown in full; acceptance recorded with version and timestamp (ESIGN/UETA).</td><td>Version, accepted-at</td></tr>
+    <tr><td>Contractor terms, arbitration, privacy notice</td><td>Identified</td><td>Versioned acceptance, same mechanism.</td><td>Version, accepted-at</td></tr>
+    <tr><td>Driving licence</td><td>Road-ready</td><td>Photo front/back; number, class, expiry extracted; "permanent, not permit"; one year held. Vendor document check or manual review at first.</td><td>Last 4, state, class, expiry</td></tr>
+    <tr><td>Auto insurance card</td><td>Road-ready</td><td>Named insured must match the driver; VIN must match the vehicle; policy dates. Manual review at first.</td><td>Insurer, policy last 4, expiry</td></tr>
+    <tr><td>Vehicle</td><td>Road-ready</td><td>Plate, make, model, year, colour, one photo; registration document; year floor if the insurer requires one.</td><td>All fields; photo</td></tr>
+    <tr><td>FCRA disclosure + authorisation</td><td>Screened</td><td>Standalone disclosure document, separate authorisation, both timestamped and versioned, before any report is ordered.</td><td>Version, signed-at</td></tr>
+    <tr><td>Criminal records + sex-offender + sanctions</td><td>Screened</td><td>Checkr (or equivalent PBSA-accredited agency). Platform-authored decision reasons, never the vendor's status codes. Adverse-action state machine with the five-day hold as a real state.</td><td>Report reference, decision, date, reason. <b>Not the report.</b></td></tr>
+    <tr><td>Motor vehicle record</td><td>Screened (vehicle classes)</td><td>Checkr MVR. Published disqualifiers (DUI within 7 years, reckless driving, more than N moving violations in 3 years; N is your call).</td><td>Reference, decision, date</td></tr>
+    <tr><td>Bank, address, SSN/TIN, W-9</td><td>Payable</td><td>Collected and held by Stripe Connect, never by ONDIGO. We store the account id and Stripe's outstanding-requirements list.</td><td>Stripe account id, requirement status</td></tr>
+    <tr><td>Device and location integrity</td><td>Every delivery</td><td>Same device that accepts must complete; mock-location flag; accuracy variance over the ping trail; new-device sign-in prompts a selfie.</td><td>Device id, flags per ping</td></tr>
+  </table>
+
+</section>
+
+<!-- ============ PAGE 4: LEGAL MAP ============ -->
+<section class="page fresh">
+  <h2 style="margin-top:0">3. The legal map, and what each item forces us to build</h2>
+  <table>
+    <thead><tr><th style="width:24%">Rule</th><th>What it says</th><th style="width:30%">What it means for ONDIGO</th></tr></thead>
+    <tr><td><b>FMCSA operating authority</b><br><span class="small">federal</span></td><td>For-hire carriage of property across state lines needs an MC number; the rules are written for commercial vehicles (10,001 lb and over). Whether a private person carrying a stranger's parcel in a car needs authority is <b>unsettled</b>: no FMCSA guidance or enforcement on crowdshipping exists. uShip demands a DOT number from everyone; Roadie, Lugg and Dolly demand nothing federal.</td><td>Position ONDIGO as parcels and single items carried by private drivers, not as a moving company. Ask counsel once, with our exact model. Design so a future "licensed carrier" tier can be added for regulated categories.</td></tr>
+    <tr><td><b>Household goods moves</b><br><span class="small">federal + state</span></td><td>The one clear trap. Interstate household-goods moving triggers USDOT plus MC household-goods authority and 49 CFR 375. Within a state: California requires a Bureau of Household Goods permit for any mover, "no exception for man-with-a-van"; Texas requires TxDMV registration and cargo insurance for household-goods carriers <b>regardless of vehicle weight</b>.</td><td>Block "moves" as a category: no whole-household jobs, a per-item and per-job value cap, and no interstate furniture consignments above a size limit until a licensed tier exists. Ask senders what the item is, not just how heavy.</td></tr>
+    <tr><td><b>FCRA</b><br><span class="small">federal</span></td><td>Any criminal or driving-record check through a reporting agency requires a standalone disclosure, separate authorisation, a pre-adverse notice with the report and the Summary of Rights, a waiting period (five business days is the norm), then a final notice with dispute rights. Whether it binds a platform screening contractors is contested; platforms have been sued both ways (Uber Eats settled for $3.35M in New York).</td><td>Implement the full flow regardless. The hold is a database state advanced by a scheduled job, not a calendar reminder. Never cache an adverse result as a permanent ban.</td></tr>
+    <tr><td><b>Tax reporting</b><br><span class="small">federal, 2026</span></td><td>Form 1099-K: $20,000 and 200 transactions (restored by the 2025 tax act). Form 1099-NEC: $2,000 for 2026 payments (up from $600). Several states set lower thresholds. W-9 needed to file either.</td><td>Stripe Connect collects the W-9 data and can file the 1099s. ONDIGO stores none of it.</td></tr>
+    <tr><td><b>INFORM Consumers Act</b><br><span class="small">federal</span></td><td>Online marketplaces must collect and verify bank, contact and tax identity for sellers with 200+ sales and $5,000+ in 12 months; penalties reported at $53,088 per violation. Whether a delivery-services marketplace is covered is unresolved.</td><td>Carry the counters from day one; the Payable tier already collects the data. Flag for counsel.</td></tr>
+    <tr><td><b>Sanctions</b><br><span class="small">federal</span></td><td>Payments to sanctioned persons are prohibited; Uber screens international sanctions lists as part of its check.</td><td>Included in the Checkr package and in Stripe's KYC. No separate build.</td></tr>
+    <tr><td><b>California Prop 22</b><br><span class="small">state</span></td><td>App-based delivery drivers are contractors, in exchange for: earnings floor of 120% of local minimum wage for engaged time plus a per-mile expense payment (30¢ base, indexed), a quarterly healthcare stipend at 15+ and 25+ hours a week, <b>occupational accident insurance with $1M medical and disability at 66% of weekly earnings</b>, criminal background checks, safety training before first use, a sexual-harassment policy, anti-discrimination rules, a 12-hours-in-24 rest rule, no control over dates or hours, no penalty for declining jobs, and an appeal process for deactivation.</td><td>This is the heaviest single obligation in the plan and it applies the moment one California driver earns money. Decision 7 asks whether to launch with California drivers.</td></tr>
+    <tr><td><b>Worker classification elsewhere</b><br><span class="small">state</span></td><td>ABC tests (California's AB5 model, Massachusetts, New Jersey) look at control. Gating privileges on acceptance rate is the pattern regulators cite as control.</td><td>Reliability scores count completions, cancellations and no-shows, never declined jobs. Drivers set their own routes and times; ONDIGO never assigns.</td></tr>
+    <tr><td><b>Biometric privacy</b><br><span class="small">Illinois BIPA, Texas CUBI, Washington</span></td><td>Face geometry from a selfie is a biometric identifier. Written notice and consent before capture, a published retention and destruction schedule, no sale. Illinois grants a private right of action; Texas's AG collected $1.4B from Meta and $1.375B from Google under CUBI.</td><td>A separate consent screen before the selfie, our retention schedule published, vendor-held templates, verify-and-discard. Do not build our own face matching.</td></tr>
+    <tr><td><b>Privacy notices</b><br><span class="small">CCPA/CPRA and 19 other states</span></td><td>Notice at collection, purpose limitation, deletion and access requests.</td><td>One privacy notice covering documents, checks, location pings and photos; a deletion path that purges what we hold and revokes what vendors hold.</td></tr>
+    <tr><td><b>Deactivation law</b><br><span class="small">NYC and spreading</span></td><td>NYC settled in January 2026 for $5M and reinstated up to 10,000 delivery workers deactivated without due process. The EU platform-work directive requires human oversight of automated decisions.</td><td>Every suspension has a basis, evidence, an appeal deadline and a human reviewer. Built in the same pass as the gate.</td></tr>
+  </table>
+</section>
+
+<!-- ============ PAGE 5: INSURANCE + POLICIES ============ -->
+<section class="page">
+  <h2>4. Insurance: the gap nobody in the US has closed</h2>
+  <p><b>Almost every personal auto policy excludes carrying property for pay.</b> Specimen wording: no liability coverage while the vehicle is "used to carry persons or property for compensation or fee." A business-use endorsement does not fix it; a rideshare/delivery endorsement ($15–30 a month) or a gig policy (Buckle, and similar) does. DoorDash accepts a photo of any insurance card; Roadie requires state-minimum cover and then tells drivers in its own terms that it "may not provide coverage while performing a Gig." Collecting an insurance card is a compliance artefact, not protection.</p>
+  <div class="cols">
+    <div class="box"><div class="k">What we can do now, free</div><ul>
+      <li>Tell the driver in the bid composer, in one sentence, that a personal policy probably does not cover the job, and link to endorsement options.</li>
+      <li>Publish a protection cap for senders (Roadie: $100 included, $10,000 purchasable; Lugg: $10,000 guarantee; TaskRabbit: $1,000 goodwill), a claims window (7 days to file, 30 days to decide) and an exclusions list.</li>
+      <li>Record the trip state (idle, to pickup, holding goods, delivered) with forensic reliability, because any future policy attaches per state.</li>
+    </ul></div>
+    <div class="box"><div class="k">What must be bought before real money</div><ul>
+      <li><b>Contingent auto liability</b> for the platform while a driver holds goods (the Uber/Amazon Flex model; Amazon carries $1M in its "packages in vehicle" phase).</li>
+      <li><b>Cargo / goods-in-transit</b> policy behind the published cap (GoShare carries $100,000 cargo; Curri requires it of carriers).</li>
+      <li><b>Occupational accident</b> cover for drivers: mandatory in California under Prop 22, offered by Zurich and others as a gig product elsewhere.</li>
+      <li>A broker who does gig platforms. This is a quote, not a build.</li>
+    </ul></div>
+  </div>
+
+  <h2 style="margin-top:14pt">5. Policies we must publish before anyone bids</h2>
+  <table>
+    <thead><tr><th style="width:24%">Policy</th><th>Content</th></tr></thead>
+    <tr><td><b>Prohibited items</b>, in three groups</td><td><b>Legal:</b> hazardous materials, lithium batteries loose, fireworks, firearms and ammunition, controlled substances, alcohol and tobacco, cash and securities, human remains, live animals, people. <b>Insurer:</b> fine art and antiques, jewellery, items above the declared-value cap, unpackaged fragile goods. <b>Handling:</b> pianos, hot tubs, safes over 45 kg, whole-household moves, anything the required vehicle class cannot carry. Shown in full at sign-up and at posting; the driver can refuse and report without penalty.</td></tr>
+    <tr><td><b>Declared value and contents</b></td><td>Every request states what it is, what it is worth and lists contents. Value drives the tier: above the threshold (decision 4) the driver must be Screened and the sender Identified. <b>Open box</b>: packaging left inspectable; the driver photographs contents at pickup or cancels without penalty.</td></tr>
+    <tr><td><b>Protection and claims</b></td><td>Included cap per job, what is excluded, who pays first (sender's own cover, then driver, then ONDIGO's cap), 7 days to file with photos and receipts, decision within 30 days, theft requires a police report, accepting a payout is final. Quoted the same way to both sides.</td></tr>
+    <tr><td><b>Handoff proof</b></td><td>Geotagged pickup and drop-off photos taken by the driver's device only; a one-time PIN at drop-off above the value threshold and for any account with dispute history; never derived from a phone number.</td></tr>
+    <tr><td><b>What the badge says</b></td><td>Never the word "verified" alone, never "background checked". Exactly what ran and when: "ID and selfie checked 12 Oct 2026. Driving record checked. No fingerprint check." Uber's $10M settlement was for the adjective, not the check.</td></tr>
+    <tr><td><b>Deactivation and appeal</b></td><td>Published grounds, notice with the basis and evidence, a human reviewer, an appeal window, and re-running a check rather than refusing re-registration.</td></tr>
+    <tr><td><b>Driver terms</b></td><td>Independent-contractor agreement, arbitration, safety rules, the insurance disclosure above, the rest rule, and the appeal process. Versioned; re-acceptance on material change.</td></tr>
+  </table>
+</section>
+
+<!-- ============ PAGE 6: BUILD VS BUY + PRODUCT CHANGES ============ -->
+<section class="page">
+  <h2>6. Build or buy, and what it costs</h2>
+  <table>
+    <thead><tr><th style="width:26%">Layer</th><th style="width:30%">Provider</th><th style="width:20%">Unit cost</th><th>Why this one</th></tr></thead>
+    <tr><td>Phone verification</td><td>Supabase Auth SMS (Twilio Verify)</td><td>≈ $0.06 per verification</td><td>Already wired into our auth; no new vendor relationship.</td></tr>
+    <tr><td>ID document + selfie</td><td>Stripe Identity</td><td>$1.50 per verification; $0.50 SSN lookup</td><td>The only IDV product whose result also satisfies Stripe Connect's KYC, so we never pay twice for the same document. No monthly minimum (Persona is $250/month; AU10TIX $500/month).</td></tr>
+    <tr><td>Criminal records, registry, sanctions</td><td>Checkr Basic</td><td>$29.99 per report + court fees at cost</td><td>Named by Roadie and Instacart; PBSA-accredited; has the candidate dispute portal FCRA needs.</td></tr>
+    <tr><td>Motor vehicle record</td><td>Checkr MVR</td><td>$9.50 per check</td><td>Run first: at Uber, 70% of rejections happen here.</td></tr>
+    <tr><td>Continuous monitoring</td><td>Checkr</td><td>$1.70 per driver per month</td><td>Only for Screened drivers; catches new charges between annual re-runs.</td></tr>
+    <tr><td>Payouts, W-9, 1099s</td><td>Stripe Connect Express</td><td>Stripe's standard fees</td><td>Holds the bank and tax data so ONDIGO never does; enforces its own payout thresholds; files 1099-K.</td></tr>
+    <tr><td>Everything else</td><td>Built in Postgres and the apps</td><td>$0 per driver</td><td>State machine, gates, consents, policies, disputes, appeals, custody records, funnel instrumentation, double-blind reviews.</td></tr>
+  </table>
+  <div class="cols">
+    <div class="box"><div class="num">≈ $1.56</div><div class="small">per driver to reach Identified. The tier most drivers stop at.</div></div>
+    <div class="box"><div class="num">≈ $41–70</div><div class="small">per driver to reach Screened, once court pass-through fees are included. Reserved for high-value work, so it is only spent where a job justifies it.</div></div>
+  </div>
+
+  <h2 style="margin-top:14pt">7. What changes in the product</h2>
+  <div class="cols">
+    <div>
+      <h3>Database</h3>
+      <ul>
+        <li><code>verification_tier</code> enum on profiles: none → contactable → identified → road_ready → screened → payable.</li>
+        <li><code>verifications</code>: one row per check (kind, provider, reference, status, decision reason, checked-at, expires-at, reviewed-by).</li>
+        <li><code>verification_documents</code> with <code>delete_after</code> and a nightly purge.</li>
+        <li><code>consents</code>: versioned acceptances (prohibited items, terms, FCRA disclosure, biometric notice).</li>
+        <li><code>vehicles</code>: plate, make, model, year, photo, registration, insurance expiry.</li>
+        <li>On requests: <code>declared_value</code>, <code>declared_category</code>, <code>contents</code>, <code>vehicle_required</code>.</li>
+        <li><code>deactivations</code> and <code>appeals</code>; <code>disputes</code> with evidence; <code>custody_events</code> written only by the driver's device; <code>handoff_codes</code>.</li>
+        <li><code>onboarding_events</code> so we can see where people drop out. No platform publishes this number; we will have to measure our own.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Gates and screens</h3>
+      <ul>
+        <li>A four-line guard inside <code>place_bid()</code> and <code>accept_fixed_price_request()</code>: required tier for this request versus the driver's tier. The whole design rests on this.</li>
+        <li>A "Get ready to carry" checklist on the profile that shows each tier, what it unlocks, what was submitted, and when a decision is expected. Silence after submission is the failure mode drivers complain about most.</li>
+        <li>The bid composer shows the net figure after the 10% fee and the insurance sentence.</li>
+        <li>The driver badge states what was checked and when.</li>
+        <li>A dispute form on the delivery page; an appeal form on any suspension notice.</li>
+        <li>Reviews revealed only when both sides have written or the window closes.</li>
+      </ul>
+      <h3>Phasing</h3>
+      <ul>
+        <li><b>Phase A</b> (free, a few days): tiers, consents, prohibited list, declared value, emergency contact, phone verification, the bid gate with manual ID review, badge copy, instrumentation.</li>
+        <li><b>Phase B</b> (vendor accounts needed): Stripe Identity, Checkr with the FCRA flow, Stripe Connect.</li>
+        <li><b>Phase C</b>: custody attribution, PIN handoff, disputes, appeals, double-blind reviews, completion rate.</li>
+        <li><b>Insurance</b> runs in parallel with a broker and is not code.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PAGE 7: DECISIONS ============ -->
+<section class="page fresh">
+  <h2 style="margin-top:0">8. Decisions I need from you</h2>
+  <p class="muted">Each has my recommendation. Say "approved as recommended" or answer the numbers you want changed.</p>
+
+  <div class="decision"><div class="n">1</div><div><b>Where the identity gate sits.</b> At the first bid (a driver signs up in a minute and verifies only when they want to carry), or at sign-up (everyone verifies before seeing anything).<br><span class="rec">Recommended: <b>at the bid.</b> Every conversion-conscious incumbent does this; TaskRabbit front-loads only because it rations an oversupplied market and sends people into homes.</span></div></div>
+
+  <div class="decision"><div class="n">2</div><div><b>Real vendors now, or simulated.</b> Opening Stripe Identity, Checkr and Stripe Connect accounts means real per-driver spend (≈ $1.56 to identify, ≈ $41–70 to screen) and real KYC. The alternative keeps the demo constraint: manual review of uploaded documents, no criminal check, no payouts.<br><span class="rec">Recommended: <b>build Phase A with manual review now; open Stripe Identity first</b> (no monthly fee, pay per use), Checkr only when the first high-value job needs it.</span></div></div>
+
+  <div class="decision"><div class="n">3</div><div><b>Minimum driver age.</b> 18 (Roadie, DoorDash, Uber Eats) or 21 (Amazon Flex, Dolly).<br><span class="rec">Recommended: <b>18 for bike and on-foot, 21 for car and truck</b>; insurers price under-21 drivers punitively and it keeps the vehicle tier simpler.</span></div></div>
+
+  <div class="decision"><div class="n">4</div><div><b>The value threshold.</b> The declared value above which a driver must be Screened and a sender Identified.<br><span class="rec">Recommended: <b>$1,000</b> as a starting parameter, tuned against our own dispute data. No platform publishes theirs; this sits between Roadie's $100 included cap and Lugg's $10,000 guarantee.</span></div></div>
+
+  <div class="decision"><div class="n">5</div><div><b>The protection cap.</b> What ONDIGO stands behind per job before an insurer is involved.<br><span class="rec">Recommended: <b>$250 included</b>, claims within 7 days, decision within 30, theft needs a police report, quoted identically to both sides; raise it only when a cargo policy is bound.</span></div></div>
+
+  <div class="decision"><div class="n">6</div><div><b>Household-goods moves and interstate furniture.</b> Allow, or block until a licensed-carrier tier exists.<br><span class="rec">Recommended: <b>block whole-household moves everywhere</b> and cap single items by size; allow interstate single items. This keeps ONDIGO out of the one regime that is unambiguous.</span></div></div>
+
+  <div class="decision"><div class="n">7</div><div><b>California.</b> Prop 22 applies the moment a California driver earns money: $1M occupational accident insurance, earnings floor, healthcare stipend, training, harassment policy, rest rule, appeals.<br><span class="rec">Recommended: <b>keep California open for senders and for browsing, but hold California driver payouts until the Prop 22 checklist is met</b> (insurance bound, training module, policies published). Alternatively exclude California drivers at launch. Your call; the demo data is heavy in California.</span></div></div>
+
+  <div class="decision"><div class="n">8</div><div><b>Insurance stance for drivers.</b> Require proof of a delivery endorsement or gig policy (strict, shrinks supply), or accept any policy and disclose the gap (what every US incumbent does).<br><span class="rec">Recommended: <b>disclose now, require the endorsement for the Screened tier</b>, and bind contingent liability and cargo cover before real money moves.</span></div></div>
+
+  <div class="decision"><div class="n">9</div><div><b>Non-driving couriers.</b> Allow bike and on-foot couriers, who stop at Identified and can only take small jobs.<br><span class="rec">Recommended: <b>yes.</b> It is the lowest-friction supply in every market studied and the vehicle-class match keeps them off heavy jobs.</span></div></div>
+
+  <div class="decision" style="border-bottom:0"><div class="n">10</div><div><b>Markets.</b> This plan is US law. Israel's carriage rules (תקנות שירותי הובלה, 2001) were left unresolved in the research and the EU adds DAC7 reporting from the first euro and the platform-work directive from December 2026.<br><span class="rec">Recommended: <b>US only</b> for this build; treat any other market as a separate legal review.</span></div></div>
+
+  <p class="small" style="margin-top:10pt;border-top:.6pt solid var(--rule);padding-top:6pt;font-size:8.2pt">Sources: the ONDIGO research briefs in <code>ondigo-2/reports/</code> (Gig platform supply onboarding; ONDIGO supply side gap analysis; eBay and reverse auctions; Global P2P delivery landscape), each with its own source list, plus checks made 29 Sep 2026 against FMCSA registration pages, the California Bureau of Household Goods and Services, TxDMV motor-carrier guidance, published personal-auto exclusion wording and gig-insurer pages (Buckle, Zurich), the Prop 22 statute text, FTC and CFPB FCRA guidance, IRS 2026 1099 thresholds, and Illinois BIPA / Texas CUBI summaries. Vendor prices are published list prices on those dates. This document describes obligations and practice; it is not legal advice.</p>
+</section>
+
+</body>
+</html>

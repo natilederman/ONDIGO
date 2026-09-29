@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { requestQueries, postRequestSchema, type PricingMode } from '@ondigo/shared';
+import { useEffect } from 'react';
+import { requestQueries, verificationQueries, postRequestSchema, ITEM_CATEGORIES, vehicleClassForWeight, type PricingMode, type ItemCategory } from '@ondigo/shared';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { Card } from '@/components/Card';
-import { Input, Textarea } from '@/components/Input';
+import { Input, Select, Textarea } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { LegalDeclaration } from '@/components/LegalDeclaration';
 import { AddressFields, emptyAddress, formatAddressLine, type AddressValue } from '@/components/AddressFields';
@@ -26,6 +27,11 @@ export default function NewRequestPage() {
   const [pickupUntilTime, setPickupUntilTime] = useState('12:00');
   const [deliverDate, setDeliverDate] = useState('');
   const [deliverTime, setDeliverTime] = useState('18:00');
+  const [declaredValue, setDeclaredValue] = useState('');
+  const [declaredCategory, setDeclaredCategory] = useState('');
+  const [contents, setContents] = useState('');
+  const [openBox, setOpenBox] = useState(true);
+  const [settings, setSettings] = useState<Record<string, number>>({});
   const [fragile, setFragile] = useState(false);
   const [handlingNotes, setHandlingNotes] = useState('');
   const [pricingMode, setPricingMode] = useState<PricingMode>('fixed');
@@ -38,7 +44,20 @@ export default function NewRequestPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    verificationQueries.getSettings(client).then(setSettings).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (authLoading || !user) return null;
+
+  const threshold = settings.value_threshold_screened ?? 1000;
+  const ceiling = settings.max_declared_value ?? 10000;
+  const cap = settings.protection_cap ?? 250;
+  const value = Number(declaredValue) || 0;
+  const carrierClass = vehicleClassForWeight(Number(itemWeightKg) || 0);
+  const whoCanCarry =
+    carrierClass === 'truck' ? 'Drivers with a truck on file' : carrierClass === 'car' ? 'Drivers with a car or truck on file' : 'Any identified courier, including bike and on foot';
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +88,10 @@ export default function NewRequestPage() {
       itemDescription,
       itemSize,
       itemWeightKg: Number(itemWeightKg),
+      declaredValue: value,
+      declaredCategory,
+      contents,
+      openBoxRequired: openBox,
       pickupText: formatAddressLine(pickup),
       pickupLat: pickup.place.lat,
       pickupLng: pickup.place.lng,
@@ -103,6 +126,10 @@ export default function NewRequestPage() {
         item_description: parsed.data.itemDescription,
         item_size: parsed.data.itemSize,
         item_weight_kg: parsed.data.itemWeightKg,
+        declared_value: parsed.data.declaredValue,
+        declared_category: parsed.data.declaredCategory as ItemCategory,
+        contents: parsed.data.contents,
+        open_box_required: parsed.data.openBoxRequired,
         pickup_text: parsed.data.pickupText,
         pickup_lat: parsed.data.pickupLat,
         pickup_lng: parsed.data.pickupLng,
@@ -140,6 +167,7 @@ export default function NewRequestPage() {
         dropoff_instructions: dropoff.instructions || null,
       });
 
+      verificationQueries.logEvent(client, 'request_posted', { request_id: created.id, declared_value: value }).catch(() => {});
       router.push(`/requests/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not post request');
@@ -171,6 +199,58 @@ export default function NewRequestPage() {
               required
             />
           </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Select id="declared-category" label="What kind of item" value={declaredCategory} onChange={(e) => setDeclaredCategory(e.target.value)} required>
+              <option value="">Choose</option>
+              {ITEM_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </Select>
+            <Input
+              id="declared-value"
+              label="Worth ($)"
+              type="number"
+              min={1}
+              max={ceiling}
+              step={1}
+              value={declaredValue}
+              onChange={(e) => setDeclaredValue(e.target.value)}
+              hint={value > threshold ? `Above $${threshold}: only drivers with a records check can take it, and you will need to verify your identity first.` : `ONDIGO stands behind up to $${cap} per job. Ceiling $${ceiling.toLocaleString()}.`}
+              required
+            />
+          </div>
+          {declaredCategory === 'household_move' && (
+            <p className="border-l-2 border-signal pl-3 text-sm text-signal">
+              ONDIGO carries items, not whole-household moves. Moving a home is licensed work in most states. Post the pieces you need carried one at a time.
+            </p>
+          )}
+          <Textarea
+            id="contents"
+            label="What is inside, exactly"
+            rows={2}
+            placeholder="e.g. One flat-packed bookshelf in two boxes, hardware bag taped to box 1"
+            hint="The driver checks this against the open packaging at pickup."
+            value={contents}
+            onChange={(e) => setContents(e.target.value)}
+            required
+          />
+          <p className="text-[13px] text-muted">
+            <b className="font-semibold text-ink">Who can carry this:</b> {whoCanCarry}, based on {itemWeightKg || 0} kg.
+          </p>
+          <label className="flex items-start gap-3 border-t border-line pt-4">
+            <input
+              id="open-box"
+              type="checkbox"
+              checked={openBox}
+              onChange={(e) => setOpenBox(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-[var(--ink)]"
+            />
+            <span>
+              <span className="block text-sm font-medium">Packaging left open for inspection</span>
+              <span className="block text-xs text-steel">The driver photographs the contents before loading. Sealed packages can be refused.</span>
+            </span>
+          </label>
 
           <label className="flex items-start gap-3 border-t border-line pt-4">
             <input
@@ -306,7 +386,7 @@ export default function NewRequestPage() {
           <LegalDeclaration checked={legalAccepted} onChange={setLegalAccepted} />
 
           {error && <p className="text-sm text-signal">{error}</p>}
-          <Button type="submit" loading={loading} className="w-full">
+          <Button type="submit" loading={loading} disabled={declaredCategory === 'household_move'} className="w-full">
             Post request
           </Button>
         </form>

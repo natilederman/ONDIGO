@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
       bids: {
@@ -81,6 +86,48 @@ export type Database = {
           {
             foreignKeyName: "connections_following_id_fkey"
             columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consents: {
+        Row: {
+          accepted_at: string
+          context: Json
+          id: string
+          policy_key: string
+          policy_version: number
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          context?: Json
+          id?: string
+          policy_key: string
+          policy_version: number
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          context?: Json
+          id?: string
+          policy_key?: string
+          policy_version?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consents_policy_key_policy_version_fkey"
+            columns: ["policy_key", "policy_version"]
+            isOneToOne: false
+            referencedRelation: "policy_documents"
+            referencedColumns: ["key", "version"]
+          },
+          {
+            foreignKeyName: "consents_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -167,102 +214,133 @@ export type Database = {
       delivery_requests: {
         Row: {
           bidding_ends_at: string | null
+          contents: string | null
           created_at: string
           current_price: number | null
+          declared_category: Database["public"]["Enums"]["item_category"] | null
+          declared_value: number | null
+          deliver_by: string | null
+          dropoff_handoff: string
           dropoff_lat: number
           dropoff_lng: number
           dropoff_text: string
           extend_on_bid: boolean
           extend_seconds: number
           fixed_price: number | null
+          fragile: boolean
+          handling_notes: string | null
           id: string
           item_description: string
           item_size: string
           item_weight_kg: number
           legal_declaration_accepted: boolean
+          legal_declaration_accepted_at: string | null
           matched_driver_id: string | null
           matched_trip_id: string | null
           needed_by: string
+          open_box_required: boolean
+          pickup_from: string | null
+          pickup_handoff: string
           pickup_lat: number
           pickup_lng: number
           pickup_text: string
+          pickup_until: string | null
           pricing_mode: Database["public"]["Enums"]["pricing_mode"]
+          prohibited_items_version: number | null
           sender_id: string
           starting_price: number | null
           status: Database["public"]["Enums"]["request_status"]
-          deliver_by: string | null
-          dropoff_handoff: string
-          fragile: boolean
-          handling_notes: string | null
-          pickup_from: string | null
-          pickup_handoff: string
-          pickup_until: string | null
+          vehicle_type_required:
+            | Database["public"]["Enums"]["vehicle_type"]
+            | null
         }
         Insert: {
           bidding_ends_at?: string | null
+          contents?: string | null
           created_at?: string
           current_price?: number | null
+          declared_category?:
+            | Database["public"]["Enums"]["item_category"]
+            | null
+          declared_value?: number | null
+          deliver_by?: string | null
+          dropoff_handoff?: string
           dropoff_lat: number
           dropoff_lng: number
           dropoff_text: string
           extend_on_bid?: boolean
           extend_seconds?: number
           fixed_price?: number | null
+          fragile?: boolean
+          handling_notes?: string | null
           id?: string
           item_description: string
           item_size: string
           item_weight_kg: number
           legal_declaration_accepted?: boolean
+          legal_declaration_accepted_at?: string | null
           matched_driver_id?: string | null
           matched_trip_id?: string | null
           needed_by: string
+          open_box_required?: boolean
+          pickup_from?: string | null
+          pickup_handoff?: string
           pickup_lat: number
           pickup_lng: number
           pickup_text: string
+          pickup_until?: string | null
           pricing_mode: Database["public"]["Enums"]["pricing_mode"]
+          prohibited_items_version?: number | null
           sender_id: string
           starting_price?: number | null
           status?: Database["public"]["Enums"]["request_status"]
-          deliver_by?: string | null
-          dropoff_handoff?: string
-          fragile?: boolean
-          handling_notes?: string | null
-          pickup_from?: string | null
-          pickup_handoff?: string
-          pickup_until?: string | null
+          vehicle_type_required?:
+            | Database["public"]["Enums"]["vehicle_type"]
+            | null
         }
         Update: {
           bidding_ends_at?: string | null
+          contents?: string | null
           created_at?: string
           current_price?: number | null
+          declared_category?:
+            | Database["public"]["Enums"]["item_category"]
+            | null
+          declared_value?: number | null
+          deliver_by?: string | null
+          dropoff_handoff?: string
           dropoff_lat?: number
           dropoff_lng?: number
           dropoff_text?: string
           extend_on_bid?: boolean
           extend_seconds?: number
           fixed_price?: number | null
+          fragile?: boolean
+          handling_notes?: string | null
           id?: string
           item_description?: string
           item_size?: string
           item_weight_kg?: number
           legal_declaration_accepted?: boolean
+          legal_declaration_accepted_at?: string | null
           matched_driver_id?: string | null
           matched_trip_id?: string | null
           needed_by?: string
+          open_box_required?: boolean
+          pickup_from?: string | null
+          pickup_handoff?: string
           pickup_lat?: number
           pickup_lng?: number
           pickup_text?: string
+          pickup_until?: string | null
           pricing_mode?: Database["public"]["Enums"]["pricing_mode"]
+          prohibited_items_version?: number | null
           sender_id?: string
           starting_price?: number | null
           status?: Database["public"]["Enums"]["request_status"]
-          deliver_by?: string | null
-          dropoff_handoff?: string
-          fragile?: boolean
-          handling_notes?: string | null
-          pickup_from?: string | null
-          pickup_handoff?: string
-          pickup_until?: string | null
+          vehicle_type_required?:
+            | Database["public"]["Enums"]["vehicle_type"]
+            | null
         }
         Relationships: [
           {
@@ -362,6 +440,38 @@ export type Database = {
           },
         ]
       }
+      onboarding_events: {
+        Row: {
+          created_at: string
+          event: string
+          id: number
+          meta: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: number
+          meta?: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: number
+          meta?: Json
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       panic_alerts: {
         Row: {
           created_at: string
@@ -407,6 +517,89 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          key: string
+          note: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          note?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          note?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      policy_documents: {
+        Row: {
+          body: string
+          key: string
+          published_at: string
+          title: string
+          version: number
+        }
+        Insert: {
+          body: string
+          key: string
+          published_at?: string
+          title: string
+          version: number
+        }
+        Update: {
+          body?: string
+          key?: string
+          published_at?: string
+          title?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      profile_private: {
+        Row: {
+          date_of_birth: string | null
+          email_verified_at: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          phone: string | null
+          phone_verified_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          date_of_birth?: string | null
+          email_verified_at?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          phone?: string | null
+          phone_verified_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          date_of_birth?: string | null
+          email_verified_at?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          phone?: string | null
+          phone_verified_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_private_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -414,10 +607,14 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
-          phone: string | null
+          is_admin: boolean
           rating_avg: number
           rating_count: number
+          suspended_at: string | null
+          suspension_reason: string | null
+          tier_updated_at: string | null
           vehicle_type: Database["public"]["Enums"]["vehicle_type"] | null
+          verification_tier: Database["public"]["Enums"]["verification_tier"]
         }
         Insert: {
           avatar_url?: string | null
@@ -425,10 +622,14 @@ export type Database = {
           created_at?: string
           full_name: string
           id: string
-          phone?: string | null
+          is_admin?: boolean
           rating_avg?: number
           rating_count?: number
+          suspended_at?: string | null
+          suspension_reason?: string | null
+          tier_updated_at?: string | null
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"] | null
+          verification_tier?: Database["public"]["Enums"]["verification_tier"]
         }
         Update: {
           avatar_url?: string | null
@@ -436,10 +637,38 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
-          phone?: string | null
+          is_admin?: boolean
           rating_avg?: number
           rating_count?: number
+          suspended_at?: string | null
+          suspension_reason?: string | null
+          tier_updated_at?: string | null
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"] | null
+          verification_tier?: Database["public"]["Enums"]["verification_tier"]
+        }
+        Relationships: []
+      }
+      prohibited_item_rules: {
+        Row: {
+          grp: string
+          id: number
+          label: string
+          note: string | null
+          sort: number
+        }
+        Insert: {
+          grp: string
+          id?: number
+          label: string
+          note?: string | null
+          sort?: number
+        }
+        Update: {
+          grp?: string
+          id?: number
+          label?: string
+          note?: string | null
+          sort?: number
         }
         Relationships: []
       }
@@ -651,6 +880,183 @@ export type Database = {
           },
         ]
       }
+      vehicles: {
+        Row: {
+          colour: string | null
+          created_at: string
+          id: string
+          insurance_expires_on: string | null
+          insurance_named_insured: string | null
+          licence_expires_on: string | null
+          make: string | null
+          model: string | null
+          model_year: number | null
+          plate: string
+          plate_state: string | null
+          user_id: string
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+          verification_id: string | null
+          vin_last6: string | null
+        }
+        Insert: {
+          colour?: string | null
+          created_at?: string
+          id?: string
+          insurance_expires_on?: string | null
+          insurance_named_insured?: string | null
+          licence_expires_on?: string | null
+          make?: string | null
+          model?: string | null
+          model_year?: number | null
+          plate: string
+          plate_state?: string | null
+          user_id: string
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+          verification_id?: string | null
+          vin_last6?: string | null
+        }
+        Update: {
+          colour?: string | null
+          created_at?: string
+          id?: string
+          insurance_expires_on?: string | null
+          insurance_named_insured?: string | null
+          licence_expires_on?: string | null
+          make?: string | null
+          model?: string | null
+          model_year?: number | null
+          plate?: string
+          plate_state?: string | null
+          user_id?: string
+          vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
+          verification_id?: string | null
+          vin_last6?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_verification_id_fkey"
+            columns: ["verification_id"]
+            isOneToOne: false
+            referencedRelation: "verifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verification_documents: {
+        Row: {
+          delete_after: string
+          id: string
+          label: string
+          storage_path: string
+          uploaded_at: string
+          user_id: string
+          verification_id: string
+        }
+        Insert: {
+          delete_after?: string
+          id?: string
+          label: string
+          storage_path: string
+          uploaded_at?: string
+          user_id: string
+          verification_id: string
+        }
+        Update: {
+          delete_after?: string
+          id?: string
+          label?: string
+          storage_path?: string
+          uploaded_at?: string
+          user_id?: string
+          verification_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_documents_verification_id_fkey"
+            columns: ["verification_id"]
+            isOneToOne: false
+            referencedRelation: "verifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verifications: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decision_reason: string | null
+          details: Json
+          expires_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["verification_kind"]
+          provider: string
+          provider_ref: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["verification_status"]
+          submitted_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decision_reason?: string | null
+          details?: Json
+          expires_at?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["verification_kind"]
+          provider?: string
+          provider_ref?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          submitted_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decision_reason?: string | null
+          details?: Json
+          expires_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["verification_kind"]
+          provider?: string
+          provider_ref?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          submitted_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verifications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -703,6 +1109,31 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      accept_policy: {
+        Args: { p_context?: Json; p_key: string }
+        Returns: {
+          accepted_at: string
+          context: Json
+          id: string
+          policy_key: string
+          policy_version: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "consents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      age_years: { Args: { p_dob: string }; Returns: number }
+      assert_can_take: {
+        Args: {
+          p_request: Database["public"]["Tables"]["delivery_requests"]["Row"]
+          p_user: string
+        }
+        Returns: undefined
       }
       close_expired_auctions: { Args: never; Returns: undefined }
       confirm_delivery: {
@@ -757,6 +1188,35 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      decide_verification: {
+        Args: {
+          p_expires_at?: string
+          p_id: string
+          p_reason: string
+          p_status: Database["public"]["Enums"]["verification_status"]
+        }
+        Returns: {
+          created_at: string
+          decided_at: string | null
+          decision_reason: string | null
+          details: Json
+          expires_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["verification_kind"]
+          provider: string
+          provider_ref: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["verification_status"]
+          submitted_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "verifications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       fund_escrow: {
         Args: { p_delivery_id: string }
         Returns: {
@@ -775,6 +1235,37 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_public_trust: {
+        Args: { p_ids: string[] }
+        Returns: {
+          driving_record_checked_at: string
+          identity_checked_at: string
+          insurance_checked_at: string
+          licence_checked_at: string
+          liveness_checked_at: string
+          providers: string
+          records_checked_at: string
+          suspended: boolean
+          user_id: string
+          vehicle_checked_at: string
+          vehicle_classes: string
+          verification_tier: Database["public"]["Enums"]["verification_tier"]
+        }[]
+      }
+      has_check: {
+        Args: {
+          p_kind: Database["public"]["Enums"]["verification_kind"]
+          p_user: string
+        }
+        Returns: boolean
+      }
+      has_consent: { Args: { p_key: string; p_user: string }; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      log_onboarding_event: {
+        Args: { p_event: string; p_meta?: Json }
+        Returns: undefined
+      }
+      map_public_activity: { Args: never; Returns: Json }
       place_bid: {
         Args: { p_amount: number; p_request_id: string }
         Returns: {
@@ -792,6 +1283,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      purge_expired_verification_documents: { Args: never; Returns: number }
+      recompute_verification_tier: {
+        Args: { p_user: string }
+        Returns: Database["public"]["Enums"]["verification_tier"]
+      }
       refund_escrow: {
         Args: { p_delivery_id: string }
         Returns: {
@@ -806,6 +1302,44 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      request_requires: {
+        Args: {
+          p_request: Database["public"]["Tables"]["delivery_requests"]["Row"]
+        }
+        Returns: Json
+      }
+      set_suspension: {
+        Args: { p_reason: string; p_user: string }
+        Returns: undefined
+      }
+      setting_num: { Args: { p_key: string }; Returns: number }
+      submit_verification: {
+        Args: {
+          p_details?: Json
+          p_kind: Database["public"]["Enums"]["verification_kind"]
+        }
+        Returns: {
+          created_at: string
+          decided_at: string | null
+          decision_reason: string | null
+          details: Json
+          expires_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["verification_kind"]
+          provider: string
+          provider_ref: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["verification_status"]
+          submitted_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "verifications"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -828,6 +1362,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      vehicle_class_for_weight: {
+        Args: { p_kg: number }
+        Returns: Database["public"]["Enums"]["vehicle_type"]
+      }
+      vehicle_rank: { Args: { p_user: string }; Returns: number }
+      why_cannot_take: {
+        Args: {
+          p_request: Database["public"]["Tables"]["delivery_requests"]["Row"]
+          p_user: string
+        }
+        Returns: string
+      }
+      why_cannot_take_request: {
+        Args: { p_request_id: string }
+        Returns: string
+      }
     }
     Enums: {
       bid_status: "active" | "outbid" | "accepted" | "rejected"
@@ -838,11 +1388,49 @@ export type Database = {
         | "delivered"
         | "completed"
         | "disputed"
+      item_category:
+        | "boxes_parcels"
+        | "furniture"
+        | "appliances"
+        | "electronics"
+        | "sports_outdoor"
+        | "instruments"
+        | "art_fragile"
+        | "documents"
+        | "vehicle_parts"
+        | "plants_garden"
+        | "other"
+        | "household_move"
       pricing_mode: "fixed" | "auction"
       request_status: "open" | "matched" | "cancelled"
       transaction_status: "held" | "released" | "refunded"
       trip_status: "active" | "completed" | "cancelled"
       vehicle_type: "car" | "truck" | "bike" | "scooter"
+      verification_kind:
+        | "phone"
+        | "identity_document"
+        | "liveness"
+        | "driving_licence"
+        | "insurance"
+        | "vehicle"
+        | "criminal_records"
+        | "motor_vehicle_record"
+        | "payout_account"
+      verification_status:
+        | "submitted"
+        | "in_review"
+        | "approved"
+        | "rejected"
+        | "pre_adverse_hold"
+        | "expired"
+        | "withdrawn"
+      verification_tier:
+        | "none"
+        | "contactable"
+        | "identified"
+        | "road_ready"
+        | "screened"
+        | "payable"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -858,12 +1446,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -887,11 +1475,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -912,11 +1500,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -937,11 +1525,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -954,11 +1542,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -979,12 +1567,53 @@ export const Constants = {
         "completed",
         "disputed",
       ],
+      item_category: [
+        "boxes_parcels",
+        "furniture",
+        "appliances",
+        "electronics",
+        "sports_outdoor",
+        "instruments",
+        "art_fragile",
+        "documents",
+        "vehicle_parts",
+        "plants_garden",
+        "other",
+        "household_move",
+      ],
       pricing_mode: ["fixed", "auction"],
       request_status: ["open", "matched", "cancelled"],
       transaction_status: ["held", "released", "refunded"],
       trip_status: ["active", "completed", "cancelled"],
       vehicle_type: ["car", "truck", "bike", "scooter"],
+      verification_kind: [
+        "phone",
+        "identity_document",
+        "liveness",
+        "driving_licence",
+        "insurance",
+        "vehicle",
+        "criminal_records",
+        "motor_vehicle_record",
+        "payout_account",
+      ],
+      verification_status: [
+        "submitted",
+        "in_review",
+        "approved",
+        "rejected",
+        "pre_adverse_hold",
+        "expired",
+        "withdrawn",
+      ],
+      verification_tier: [
+        "none",
+        "contactable",
+        "identified",
+        "road_ready",
+        "screened",
+        "payable",
+      ],
     },
   },
 } as const
-

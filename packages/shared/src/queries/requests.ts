@@ -3,7 +3,9 @@ import type { DeliveryRequest, RequestContactDetails, NewRequestContactDetails }
 
 export type NewRequest = Omit<
   DeliveryRequest,
-  'id' | 'sender_id' | 'status' | 'matched_trip_id' | 'matched_driver_id' | 'created_at' | 'current_price'
+  | 'id' | 'sender_id' | 'status' | 'matched_trip_id' | 'matched_driver_id' | 'created_at' | 'current_price'
+  // filled in by the declaration trigger
+  | 'legal_declaration_accepted_at' | 'prohibited_items_version' | 'vehicle_type_required'
 > & { current_price?: number | null };
 
 export async function listOpenRequests(client: OndigoClient): Promise<DeliveryRequest[]> {

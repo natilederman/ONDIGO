@@ -1,9 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import type { BidWithDriver } from '@ondigo/shared';
+import { verificationQueries, type BidWithDriver, type DriverPublicTrust } from '@ondigo/shared';
+import { getSupabaseClient } from '@/lib/supabaseClient';
 import { Button } from './Button';
 import { DriverBadge } from './DriverBadge';
+import { TrustLine } from './TrustLine';
 
 /**
  * The bid ladder. The standing bid keeps full weight and a solid rule beneath it;
@@ -18,6 +21,13 @@ export function BidList({
   isOwner: boolean;
   onAccept?: (bidId: string) => void;
 }) {
+  const [trust, setTrust] = useState<Record<string, DriverPublicTrust>>({});
+  useEffect(() => {
+    const ids = Array.from(new Set(bids.map((b) => b.driver?.id).filter(Boolean))) as string[];
+    if (!ids.length) return;
+    verificationQueries.publicTrust(getSupabaseClient(), ids).then(setTrust).catch(() => {});
+  }, [bids]);
+
   if (bids.length === 0) {
     return (
       <p className="border-t border-line pt-5 text-sm text-muted">
@@ -46,7 +56,8 @@ export function BidList({
               ) : (
                 <span className="text-sm text-steel">Driver</span>
               )}
-              <span className="mt-0.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-steel">
+              {bid.driver && <TrustLine trust={trust[bid.driver.id]} className="mt-1 max-w-[52ch]" />}
+              <span className="mt-1 block text-[11px] font-semibold uppercase tracking-[0.1em] text-steel">
                 {bid.status}
               </span>
             </div>

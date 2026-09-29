@@ -3,9 +3,14 @@
 import { useEffect, useState, use } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   requestQueries,
   bidQueries,
+  verificationQueries,
+  ITEM_CATEGORIES,
+  PLATFORM_FEE_RATE,
+  vehicleClassForWeight,
   type DeliveryRequest,
   type BidWithDriver,
   type RequestContactDetails,
@@ -37,6 +42,9 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  // why this signed-in person may not take the job, in a sentence; null when they may
+  const [blocked, setBlocked] = useState<string | null>(null);
+  const [settings, setSettings] = useState<Record<string, number>>({});
 
   // the bid form has to disappear the moment the clock runs out, not on reload
   useEffect(() => {
@@ -45,6 +53,8 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   }, []);
 
   useEffect(() => {
+    verificationQueries.getSettings(client).then(setSettings).catch(() => {});
+    verificationQueries.whyCannotTake(client, id).then(setBlocked).catch(() => setBlocked(null));
     requestQueries.getRequest(client, id).then(setRequest);
     // RLS decides who gets this row: the sender always, the matched driver once matched.
     requestQueries.getContactDetails(client, id).then(setContact).catch(() => setContact(null));
@@ -86,7 +96,13 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   const price = auction ? request.current_price : request.fixed_price;
   const biddingClosed =
     auction && (!request.bidding_ends_at || new Date(request.bidding_ends_at).getTime() <= now);
-  const canBid = isDriver && request.status === 'open' && !biddingClosed;
+  const canBid = isDriver && request.status === 'open' && !biddingClosed && !blocked;
+  const vehicleClass = request.vehicle_type_required ?? vehicleClassForWeight(request.item_weight_kg);
+  const threshold = settings.value_threshold_screened ?? 1000;
+  const needsScreened = (request.declared_value ?? 0) > threshold;
+  const category = ITEM_CATEGORIES.find((c) => c.value === request.declared_category)?.label;
+  const fee = PLATFORM_FEE_RATE;
+  const net = (amount: number) => Math.max(0, amount * (1 - fee));
 
   const placeBid = async () => {
     setBusy(true);
@@ -139,6 +155,9 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
           ['Collect', formatWindow(request.pickup_from, request.pickup_until, request.needed_by)],
           ['Deliver by', formatDeadline(request.deliver_by, request.needed_by)],
           ['Handling', request.fragile ? 'Fragile' : 'Standard'],
+          ['Declared value', request.declared_value != null ? `$${Number(request.declared_value).toLocaleString()}` : 'Not declared'],
+          ['Kind', category ?? 'Not stated'],
+          ['Who can carry it', vehicleClass === 'truck' ? 'Truck on file' : vehicleClass === 'car' ? 'Car or truck on file' : 'Any identified courier'],
         ].map(([k, v]) => (
           <div key={k as string} className="border-b border-line py-4 pr-4">
             <dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-steel">{k}</dt>
@@ -146,6 +165,15 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
           </div>
         ))}
       </dl>
+      {request.contents && (
+        <p className="mt-4 text-[14px] leading-relaxed text-muted">
+          <b className="font-semibold text-ink">Contents:</b> {request.contents}
+          {request.open_box_required && <span className="text-steel"> · Packaging left open for inspection at pickup.</span>}
+        </p>
+      )}
+      {needsScreened && (
+        <p className="mt-2 text-[13px] text-muted">Above ${threshold.toLocaleString()}: only drivers with a completed records check may take this job.</p>
+      )}
       {request.handling_notes && (
         <p className="mt-4 border-l-2 border-line-strong pl-3 text-[14px] leading-relaxed text-muted">
           {request.handling_notes}
@@ -231,12 +259,22 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
           </div>
         )}
 
-        {!auction && isDriver && request.status === 'open' && (
-          <Button loading={busy} onClick={acceptFixed}>
-            Accept and carry this
-          </Button>
+        {!auction && isDriver && request.status === 'open' && !blocked && (
+          <div className="text-right">
+            <Button loading={busy} onClick={acceptFixed}>
+              Accept and carry this
+            </Button>
+            <p className="mt-2 text-[12px] text-steel">You keep ${net(request.fixed_price ?? 0).toFixed(2)} after the {Math.round(fee * 100)}% fee.</p>
+          </div>
         )}
       </div>
+
+      {isDriver && request.status === 'open' && blocked && (
+        <div className="mt-8 border-l-2 border-ink pl-4">
+          <p className="text-[15px] font-medium">{blocked}</p>
+          <Link href="/verify" className="mt-2 inline-block text-[13.5px] underline">Get ready to carry</Link>
+        </div>
+      )}
 
       {auction && (
         <div className="mt-8">
@@ -257,6 +295,12 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                 Place bid
               </Button>
             </div>
+          )}
+          {canBid && (
+            <p className="-mt-4 mb-7 text-[12.5px] leading-relaxed text-steel">
+              {bidAmount && Number(bidAmount) > 0 ? `You would keep $${net(Number(bidAmount)).toFixed(2)} after the ${Math.round(fee * 100)}% fee. ` : `ONDIGO keeps ${Math.round(fee * 100)}% of the agreed price. `}
+              Your personal auto policy probably does not cover carrying goods for payment; ONDIGO does not insure your vehicle.
+            </p>
           )}
 
           {isDriver && request.status === 'open' && biddingClosed && (
