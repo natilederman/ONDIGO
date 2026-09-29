@@ -5,21 +5,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: '#0A0A0A',
-        paper: '#FFFFFF',
-        line: '#E5E5E5',
-        muted: '#6B6B6B',
+        ink: 'var(--ink)',
+        paper: 'var(--paper)',
+        ground: 'var(--ground)',
+        ash: 'var(--ash)',
+        line: 'var(--rule)',
+        'line-strong': 'var(--rule-hi)',
+        steel: 'var(--steel)',
+        muted: 'var(--steel-2)',
+        signal: 'var(--signal)',
+        // the single accent keeps one meaning: time running out
         accent: {
-          DEFAULT: '#FF5A1F',
-          light: '#FFE8DD',
-          dark: '#D9450F',
+          DEFAULT: 'var(--signal)',
+          light: 'var(--ash)',
+          dark: 'var(--signal)',
         },
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-archivo)', 'system-ui', 'sans-serif'],
       },
+      // one radius rule for the whole site: pills for controls, square for everything else
       borderRadius: {
-        card: '14px',
+        card: '0px',
+      },
+      letterSpacing: {
+        display: '-0.038em',
       },
     },
   },

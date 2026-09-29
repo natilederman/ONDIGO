@@ -16,30 +16,39 @@ export function Navbar() {
   const router = useRouter();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-bold tracking-tight">
+    <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur-md backdrop-saturate-150">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-6">
+        <Link href="/" className="text-[15px] font-bold tracking-[0.18em] whitespace-nowrap">
           ONDIGO
         </Link>
+
         {user && (
-          <nav className="hidden gap-6 sm:flex">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`text-sm font-medium ${
-                  pathname?.startsWith(l.href) ? 'text-ink' : 'text-muted hover:text-ink'
-                }`}
-              >
-                {l.label}
-              </Link>
-            ))}
+          <nav className="hidden gap-7 sm:flex">
+            {links.map((l) => {
+              const active = pathname?.startsWith(l.href);
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`text-[13.5px] font-medium transition-colors duration-150 ${
+                    active ? 'text-ink' : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
           </nav>
         )}
-        <div className="flex items-center gap-4">
+
+        <div className="flex items-center gap-5">
           {user ? (
             <>
-              <Link href={`/profile/${user.id}`} className="text-sm font-medium hover:underline">
+              <Link
+                href={`/profile/${user.id}`}
+                className="text-[13.5px] font-medium hover:underline"
+              >
                 {profile?.full_name ?? 'Profile'}
               </Link>
               <button
@@ -47,17 +56,23 @@ export function Navbar() {
                   await signOut();
                   router.push('/');
                 }}
-                className="text-sm text-muted hover:text-ink"
+                className="text-[13.5px] text-muted transition-colors duration-150 hover:text-ink"
               >
                 Sign out
               </button>
             </>
           ) : (
             <>
-              <Link href="/login" className="text-sm font-medium text-muted hover:text-ink">
+              <Link
+                href="/login"
+                className="text-[13.5px] font-medium text-muted transition-colors duration-150 hover:text-ink"
+              >
                 Log in
               </Link>
-              <Link href="/signup" className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper">
+              <Link
+                href="/signup"
+                className="inline-flex items-center rounded-full border border-ink bg-ink px-4 py-2 text-[13.5px] font-semibold text-paper transition-transform duration-150 ease-out active:scale-[0.97]"
+              >
                 Sign up
               </Link>
             </>

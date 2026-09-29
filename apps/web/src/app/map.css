@@ -1,0 +1,63 @@
+/* Departures map. Everything the d3 engine draws is prefixed dm-; the React
+   shell around it (lead, list, bar) lives in Tailwind in DeparturesMap.tsx. */
+
+.dm-stage { position: relative; border-top: 1px solid var(--ink); padding-top: 14px; }
+.dm-stage-inner { height: min(calc(100vh - 300px), 740px); min-height: 380px; }
+.dm-svg { display: block; width: 100%; height: 100%; overflow: hidden; cursor: default; }
+.dm-svg.grab { cursor: grab; }
+.dm-bg { fill: transparent; }
+.dm-st { fill: var(--ash); stroke: none; transition: fill 160ms cubic-bezier(.23,1,.32,1); cursor: pointer; }
+.dm-st.hot:hover { fill: var(--ash-2); }
+.dm-st.active { fill: var(--ash); }
+.dm-st:focus { outline: none; }
+.dm-st:focus-visible { outline: none; stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.dm-st.active, .dm-st.active:focus-visible { stroke: none; }
+.dm-edge-d { fill: var(--edge-dark); }
+.dm-edge-l { fill: var(--edge-light); }
+.dm-bd { fill: none; stroke: var(--rule-hi); stroke-width: .7; vector-effect: non-scaling-stroke; stroke-linejoin: round; pointer-events: none; }
+.dm-bd.active { stroke: var(--ink); stroke-width: 1.1; }
+.dm-texture { mix-blend-mode: var(--tex-blend); opacity: var(--tex-opacity); filter: var(--tex-filter); pointer-events: none; }
+.dm-num { font-weight: 600; fill: var(--ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round; }
+.dm-num.top { font-weight: 700; }
+.dm-leader { stroke: var(--rule-hi); stroke-width: .8; fill: none; }
+[data-level="country"] .dm-cities { pointer-events: none; }
+.dm-cityg { transition: opacity 180ms cubic-bezier(.23,1,.32,1); }
+.dm-cityg.hot { cursor: pointer; }
+.dm-cityg.faint { opacity: .4; }
+.dm-chit { fill: transparent; stroke: none; }
+.dm-city { fill: var(--ink); transition: transform 160ms cubic-bezier(.23,1,.32,1); }
+.dm-city.quiet { fill: var(--steel); opacity: .55; }
+.dm-cityg.hot:hover .dm-city, .dm-cityg.sel .dm-city { transform: scale(1.5); }
+.dm-clab { font-weight: 600; fill: var(--ink); paint-order: stroke; stroke: var(--paper); stroke-linejoin: round; pointer-events: none; }
+.dm-clab.quiet { fill: var(--steel); font-weight: 500; }
+.dm-clab .ct { fill: var(--steel); font-weight: 500; }
+.dm-cityg.sel .dm-clab { font-weight: 700; }
+.dm-cityg.sel .dm-clab .ct { fill: var(--ink); }
+.dm-route { fill: none; stroke: var(--ink); stroke-width: 1.7; vector-effect: non-scaling-stroke; stroke-linecap: round; cursor: pointer; transition: opacity 220ms cubic-bezier(.23,1,.32,1), stroke-width 160ms cubic-bezier(.23,1,.32,1); }
+.dm-route.trip { stroke: var(--steel); stroke-width: 1.15; }
+.dm-route.dim { opacity: .28; }
+.dm-route.sel { stroke-width: 2.6; }
+.dm-route.trip.sel { stroke: var(--ink); }
+.dm-hit { fill: none; stroke: transparent; vector-effect: non-scaling-stroke; stroke-width: 16; cursor: pointer; }
+.dm-cont { fill: var(--steel); }
+.dm-cont.dim { opacity: .28; }
+.dm-bcount { font-weight: 600; fill: var(--ink); text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--paper); stroke-linejoin: round; pointer-events: none; transition: opacity 220ms cubic-bezier(.23,1,.32,1); }
+.dm-bcount.dim { opacity: .28; }
+.dm-hover { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 12px; font-weight: 600; padding: 5px 9px; transform: translate(-50%, -140%); white-space: nowrap; opacity: 0; transition: opacity 120ms cubic-bezier(.23,1,.32,1); }
+.dm-hover.on { opacity: 1; }
+.dm-hover small { font-weight: 400; opacity: .75; margin-left: 6px; }
+
+/* the row wash on hover, same as the departure table had */
+.dm-row { position: relative; }
+.dm-row::after { content: ""; position: absolute; inset: 0 -16px; background: linear-gradient(90deg, var(--fade), transparent 62%); opacity: 0; pointer-events: none; transition: opacity 200ms cubic-bezier(.23,1,.32,1); }
+@media (hover: hover) { .dm-row:hover::after { opacity: 1; } }
+
+/* phone: the ranked state list replaces the country map */
+.dm-mobile { display: none; }
+@media (max-width: 720px) {
+  .dm-stage-inner { height: 60vh; min-height: 360px; }
+  [data-level="country"] .dm-stage-inner { display: none; }
+  [data-level="country"] .dm-mobile { display: block; }
+  [data-level="country"] .dm-hint, .dm-legend { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .dm-st, .dm-cityg, .dm-city, .dm-route, .dm-bcount, .dm-hover { transition-duration: .01ms; } }

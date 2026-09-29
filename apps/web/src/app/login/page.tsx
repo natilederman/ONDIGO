@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signInSchema } from '@ondigo/shared';
 import { useAuth } from '@/lib/AuthProvider';
-import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 
@@ -37,31 +36,72 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="mx-auto max-w-sm">
-      <h1 className="text-2xl font-bold">Log in</h1>
-      <Card className="mt-6 space-y-4">
-        <form onSubmit={submit} className="space-y-4">
-          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          {error && <p className="text-sm text-accent-dark">{error}</p>}
-          <Button type="submit" loading={loading} className="w-full">
-            Log in
-          </Button>
-        </form>
-        <p className="text-center text-sm text-muted">
-          No account? <Link href="/signup" className="font-medium text-ink underline">Sign up</Link>
+    <div className="mx-auto max-w-[380px] py-6">
+      <h1 className="text-[clamp(1.5rem,2.4vw,1.95rem)] font-semibold leading-[1.1] tracking-display">
+        Log in
+      </h1>
+
+      <form onSubmit={submit} className="mt-8 space-y-5 border-t border-ink pt-7">
+        <Input
+          id="login-email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <Input
+          id="login-password"
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        {error && (
+          <p role="alert" className="border-l-2 border-signal pl-3 text-sm text-signal">
+            {error}
+          </p>
+        )}
+        <Button type="submit" loading={loading} className="w-full">
+          Log in
+        </Button>
+      </form>
+
+      <p className="mt-6 text-sm text-muted">
+        No account?{' '}
+        <Link href="/signup" className="font-medium text-ink underline">
+          Sign up
+        </Link>
+      </p>
+
+      <div className="mt-10 border-t border-line pt-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-steel">
+          Demo accounts
         </p>
-        <p className="text-center text-xs text-muted">
-          Demo accounts: alice@ondigo.test / ben@ondigo.test / carla@ondigo.test / drew@ondigo.test — password
-          ondigo123
-        </p>
-      </Card>
+        <ul className="mt-3 space-y-1.5">
+          {['alice@ondigo.test', 'ben@ondigo.test', 'carla@ondigo.test', 'drew@ondigo.test'].map(
+            (addr) => (
+              <li key={addr} className="flex items-baseline justify-between gap-4 text-[13px]">
+                <span className="text-muted">{addr}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail(addr);
+                    setPassword('ondigo123');
+                  }}
+                  className="shrink-0 text-steel underline transition-colors duration-150 hover:text-ink"
+                >
+                  Use
+                </button>
+              </li>
+            )
+          )}
+        </ul>
+        <p className="mt-3 text-[12px] text-steel">Password for all four: ondigo123</p>
+      </div>
     </div>
   );
 }

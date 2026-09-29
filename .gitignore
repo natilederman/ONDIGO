@@ -13,3 +13,5 @@ supabase/.temp
 .turbo/
 ios/
 android/
+*.tsbuildinfo
+.impeccable/hook.cache.json

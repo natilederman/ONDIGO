@@ -1,4 +1,5 @@
 export * from './database.types';
+export * from './types';
 export * from './constants';
 export * from './schemas';
 export * from './supabaseClient';

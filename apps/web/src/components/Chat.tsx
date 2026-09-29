@@ -33,12 +33,12 @@ export function Chat({ deliveryId }: { deliveryId: string }) {
   };
 
   return (
-    <div className="flex h-96 flex-col rounded-card border border-line">
+    <div className="flex h-96 flex-col border border-line">
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {messages.map((m) => (
           <div
             key={m.id}
-            className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
+            className={`max-w-[75%] px-3 py-2 text-sm ${
               m.sender_id === user?.id ? 'ml-auto bg-ink text-paper' : 'bg-line/40 text-ink'
             }`}
           >

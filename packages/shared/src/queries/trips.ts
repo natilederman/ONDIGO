@@ -1,5 +1,5 @@
 import type { OndigoClient } from '../supabaseClient';
-import type { Trip, DriverSummary } from '../database.types';
+import type { Trip, DriverSummary } from '../types';
 
 export type NewTrip = Omit<Trip, 'id' | 'driver_id' | 'status' | 'created_at'>;
 export type TripWithDriver = Trip & { driver: DriverSummary | null };

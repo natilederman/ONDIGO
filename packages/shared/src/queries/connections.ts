@@ -1,5 +1,5 @@
 import type { OndigoClient } from '../supabaseClient';
-import type { Connection } from '../database.types';
+import type { Connection } from '../types';
 
 export async function listConnections(client: OndigoClient, userId: string): Promise<Connection[]> {
   const { data, error } = await client.from('connections').select('*').eq('follower_id', userId);

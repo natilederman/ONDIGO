@@ -44,6 +44,14 @@ export const postRequestSchema = z
     dropoffLat: z.number(),
     dropoffLng: z.number(),
     neededBy: z.string().min(1),
+    // timing: an ISO instant for each; the form assembles them from date + time inputs
+    pickupFrom: z.string().datetime({ offset: true, message: 'Pick when the item can be collected from' }),
+    pickupUntil: z.string().datetime({ offset: true, message: 'Pick the latest collection time' }),
+    deliverBy: z.string().datetime({ offset: true, message: 'Pick a delivery deadline' }),
+    pickupHandoff: z.enum(['in_person', 'leave_at_door']).default('in_person'),
+    dropoffHandoff: z.enum(['in_person', 'leave_at_door']).default('in_person'),
+    fragile: z.boolean().default(false),
+    handlingNotes: z.string().max(500).optional(),
     pricingMode: z.enum(['fixed', 'auction']),
     fixedPrice: z.number().positive().optional(),
     startingPrice: z.number().positive().optional(),
@@ -61,6 +69,14 @@ export const postRequestSchema = z
   .refine((v) => (v.pricingMode === 'auction' ? v.startingPrice != null && v.biddingEndsAt : true), {
     message: 'Starting price and bidding end time are required',
     path: ['startingPrice'],
+  })
+  .refine((v) => new Date(v.pickupUntil) >= new Date(v.pickupFrom), {
+    message: 'The collection window must end after it starts',
+    path: ['pickupUntil'],
+  })
+  .refine((v) => new Date(v.deliverBy) >= new Date(v.pickupUntil), {
+    message: 'The delivery deadline must be after the collection window',
+    path: ['deliverBy'],
   });
 
 export const placeBidSchema = z.object({

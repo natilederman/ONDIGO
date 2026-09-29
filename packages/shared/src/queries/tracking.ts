@@ -1,5 +1,5 @@
 import type { OndigoClient } from '../supabaseClient';
-import type { LocationPing } from '../database.types';
+import type { LocationPing } from '../types';
 
 export async function recordPing(client: OndigoClient, deliveryId: string, lat: number, lng: number): Promise<void> {
   const { error } = await client.from('location_pings').insert({ delivery_id: deliveryId, lat, lng });

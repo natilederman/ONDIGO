@@ -1,5 +1,5 @@
 import type { OndigoClient } from '../supabaseClient';
-import type { Message } from '../database.types';
+import type { Message } from '../types';
 
 export async function listMessages(client: OndigoClient, deliveryId: string): Promise<Message[]> {
   const { data, error } = await client

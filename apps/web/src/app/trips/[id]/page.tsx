@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { tripQueries, requestQueries, type TripWithDriver, type DeliveryRequest } from '@ondigo/shared';
@@ -12,17 +12,18 @@ import { DriverBadge } from '@/components/DriverBadge';
 
 const MapView = dynamic(() => import('@/components/MapView').then((m) => m.MapView), { ssr: false });
 
-export default function TripDetailPage({ params }: { params: { id: string } }) {
+export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { loading: authLoading } = useRequireAuth();
   const client = getSupabaseClient();
   const [trip, setTrip] = useState<TripWithDriver | null>(null);
   const [matches, setMatches] = useState<DeliveryRequest[]>([]);
 
   useEffect(() => {
-    tripQueries.getTrip(client, params.id).then(setTrip);
+    tripQueries.getTrip(client, id).then(setTrip);
     requestQueries.listOpenRequests(client).then(setMatches);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id]);
+  }, [id]);
 
   if (authLoading || !trip) return null;
 

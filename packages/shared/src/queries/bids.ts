@@ -1,5 +1,5 @@
 import type { OndigoClient } from '../supabaseClient';
-import type { Bid, Delivery, DriverSummary } from '../database.types';
+import type { Bid, Delivery, DriverSummary } from '../types';
 
 export type BidWithDriver = Bid & { driver: DriverSummary | null };
 

@@ -1,5 +1,5 @@
 import type { OndigoClient } from '../supabaseClient';
-import type { Profile } from '../database.types';
+import type { Profile } from '../types';
 
 export async function getProfile(client: OndigoClient, id: string): Promise<Profile> {
   const { data, error } = await client.from('profiles').select('*').eq('id', id).single();

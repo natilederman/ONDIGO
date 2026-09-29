@@ -1,5 +1,5 @@
 import type { OndigoClient } from '../supabaseClient';
-import type { Review } from '../database.types';
+import type { Review } from '../types';
 
 export async function listReviewsForUser(client: OndigoClient, userId: string): Promise<Review[]> {
   const { data, error } = await client

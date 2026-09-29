@@ -1,5 +1,5 @@
 import type { OndigoClient } from '../supabaseClient';
-import type { DeliveryRequest } from '../database.types';
+import type { DeliveryRequest, RequestContactDetails, NewRequestContactDetails } from '../types';
 
 export type NewRequest = Omit<
   DeliveryRequest,
@@ -45,6 +45,43 @@ export async function createRequest(
   const { data, error } = await client.from('delivery_requests').insert(payload).select().single();
   if (error) throw error;
   return data;
+}
+
+/**
+ * The precise address parts live in their own table because delivery_requests is
+ * readable by every authenticated user while a request is open. Writing a phone
+ * number or a door code onto the request itself would publish it platform-wide.
+ */
+export async function saveContactDetails(
+  client: OndigoClient,
+  requestId: string,
+  details: Omit<NewRequestContactDetails, 'request_id'>
+): Promise<RequestContactDetails> {
+  const { data, error } = await client
+    .from('request_contact_details')
+    .upsert({ ...details, request_id: requestId, updated_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Returns null rather than throwing when the caller is not entitled to see the
+ * details: row-level security hides the row from drivers who have not won the
+ * job, which is a normal state, not an error.
+ */
+export async function getContactDetails(
+  client: OndigoClient,
+  requestId: string
+): Promise<RequestContactDetails | null> {
+  const { data, error } = await client
+    .from('request_contact_details')
+    .select('*')
+    .eq('request_id', requestId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? null;
 }
 
 export function subscribeToRequest(

@@ -1,4 +1,4 @@
-import type { VehicleType } from './database.types';
+import type { VehicleType } from './types';
 
 export const VEHICLE_TYPES: { value: VehicleType; label: string; maxWeightKg: number; maxSize: string }[] = [
   { value: 'scooter', label: 'Scooter', maxWeightKg: 5, maxSize: 'Small (backpack-sized)' },

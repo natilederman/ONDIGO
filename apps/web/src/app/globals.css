@@ -2,29 +2,227 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
-  background: #ffffff;
-  color: #0a0a0a;
-}
-
-* {
-  border-color: #e5e5e5;
-}
-
-@keyframes marquee {
-  from {
-    transform: translateX(-50%);
+@layer base {
+  :root {
+    --paper: #ffffff;
+    --ground: #fafafa;
+    --ash: #f4f4f5;
+    --rule: #e3e4e6;
+    --rule-hi: #cfd1d4;
+    --ink: #0a0b0d;
+    --steel: #6a6f77;
+    --steel-2: #55595f;
+    --signal: #d92c1f;
+    --fade: rgba(10, 11, 13, 0.045);
+    --sel: rgba(10, 11, 13, 0.1);
+    /* departures map: relief edge and paper texture */
+    --ash-2: #e6e7e9;
+    --edge-dark: rgba(10, 11, 13, 0.1);
+    --edge-light: rgba(255, 255, 255, 0.95);
+    --tex-blend: multiply;
+    --tex-opacity: 0.55;
+    --tex-filter: none;
+    color-scheme: light;
   }
-  to {
-    transform: translateX(0%);
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --paper: #0a0b0d;
+      --ground: #0e0f12;
+      --ash: #121317;
+      --rule: #232528;
+      --rule-hi: #33363b;
+      --ink: #f3f4f5;
+      --steel: #9298a1;
+      --steel-2: #b4bac2;
+      --signal: #ff4a3d;
+      --fade: rgba(255, 255, 255, 0.05);
+      --sel: rgba(255, 255, 255, 0.16);
+      --ash-2: #1d2025;
+      --edge-dark: rgba(0, 0, 0, 0.55);
+      --edge-light: rgba(255, 255, 255, 0.07);
+      --tex-blend: screen;
+      --tex-opacity: 0.06;
+      --tex-filter: invert(1);
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    --paper: #0a0b0d;
+    --ground: #0e0f12;
+    --ash: #121317;
+    --rule: #232528;
+    --rule-hi: #33363b;
+    --ink: #f3f4f5;
+    --steel: #9298a1;
+    --steel-2: #b4bac2;
+    --signal: #ff4a3d;
+    --fade: rgba(255, 255, 255, 0.05);
+    --sel: rgba(255, 255, 255, 0.16);
+    --ash-2: #1d2025;
+    --edge-dark: rgba(0, 0, 0, 0.55);
+    --edge-light: rgba(255, 255, 255, 0.07);
+    --tex-blend: screen;
+    --tex-opacity: 0.06;
+    --tex-filter: invert(1);
+    color-scheme: dark;
+  }
+
+  html,
+  body {
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* browser surfaces belong to the design system too */
+  ::selection {
+    background: var(--sel);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule-hi) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--rule-hi);
+    border: 3px solid var(--paper);
+    border-radius: 99px;
+  }
+
+  a {
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: 1px;
+  }
+
+  /* tabular figures wherever numbers line up in columns */
+  .tnum {
+    font-variant-numeric: tabular-nums lining-nums;
   }
 }
 
-.animate-marquee {
-  animation: marquee 40s linear infinite;
+@layer components {
+  /* the one authored moment: rows land in sequence on first paint */
+  @media (prefers-reduced-motion: no-preference) {
+    .land {
+      animation: land 640ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+    .land:nth-child(1) { animation-delay: 40ms; }
+    .land:nth-child(2) { animation-delay: 95ms; }
+    .land:nth-child(3) { animation-delay: 150ms; }
+    .land:nth-child(4) { animation-delay: 205ms; }
+    .land:nth-child(5) { animation-delay: 260ms; }
+    .land:nth-child(6) { animation-delay: 315ms; }
+    .land:nth-child(n + 7) { animation-delay: 360ms; }
+  }
+
+  /*
+    Transform only, never opacity. A row must be readable even if the animation
+    never advances (background tab, throttled compositor), so the resting state
+    is fully visible and the entrance is pure movement.
+  */
+  @keyframes land {
+    from {
+      transform: translateY(9px);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  /*
+    OSM tiles ship full colour, which fights a near-monochrome interface.
+    Desaturating the tile layer alone leaves the route line and the two end
+    markers as the only colour on the map.
+  */
+  .ondigo-map .leaflet-tile-pane {
+    filter: grayscale(1) contrast(0.92) brightness(1.04);
+  }
+  .ondigo-map .leaflet-container {
+    background: var(--ash);
+    font-family: inherit;
+  }
+  .ondigo-map .leaflet-control-attribution {
+    background: color-mix(in srgb, var(--paper) 84%, transparent);
+    color: var(--steel);
+    font-size: 10px;
+  }
+  .ondigo-map .leaflet-control-attribution a {
+    color: var(--steel);
+  }
+  .ondigo-map .leaflet-bar a {
+    border-radius: 0;
+    background: var(--paper);
+    color: var(--ink);
+    border-color: var(--rule);
+  }
+  .ondigo-map .leaflet-popup-content-wrapper,
+  .ondigo-map .leaflet-popup-tip {
+    border-radius: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .ondigo-map .leaflet-popup-content {
+    margin: 10px 12px;
+    font-size: 13px;
+  }
+
+  /* dark mode: lift the tiles rather than leaving a glowing white slab */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) .ondigo-map .leaflet-tile-pane {
+      filter: grayscale(1) invert(1) contrast(0.86) brightness(0.92);
+    }
+  }
+  :root[data-theme='dark'] .ondigo-map .leaflet-tile-pane {
+    filter: grayscale(1) invert(1) contrast(0.86) brightness(0.92);
+  }
+
+  /* hairline row with a hover wash, the site's primary structural unit */
+  .row-wash {
+    position: relative;
+  }
+  .row-wash::after {
+    content: '';
+    position: absolute;
+    inset: 0 -16px;
+    background: linear-gradient(90deg, var(--fade), transparent 62%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .row-wash:hover::after {
+      opacity: 1;
+    }
+  }
 }
 
-.animate-marquee:hover {
-  animation-play-state: paused;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

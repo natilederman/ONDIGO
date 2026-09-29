@@ -116,7 +116,7 @@ export default function NewTripPage() {
             required
           />
           <Textarea label="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
-          {error && <p className="text-sm text-accent-dark">{error}</p>}
+          {error && <p className="text-sm text-signal">{error}</p>}
           <Button type="submit" loading={loading} className="w-full">
             Post trip
           </Button>

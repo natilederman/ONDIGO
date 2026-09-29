@@ -5,7 +5,7 @@ const testimonials = [
     name: 'Priya S.',
     route: 'San Francisco → Los Angeles',
     rating: 5,
-    quote: "Oh my god, it was so amazing — my driver picked up the box the same day I posted and had it in LA by the next morning. Cheaper than any shipping quote I got.",
+    quote: "Oh my god, it was so amazing. My driver picked up the box the same day I posted and had it in LA by the next morning. Cheaper than any shipping quote I got.",
   },
   {
     name: 'Marcus T.',
@@ -35,7 +35,7 @@ const testimonials = [
     name: 'Yuki N.',
     route: 'Austin, TX',
     rating: 5,
-    quote: 'Used a bike courier for a same-day local delivery. Tracked it moving across town in real time — genuinely fun to watch.',
+    quote: 'Used a bike courier for a same-day local delivery. Tracked it moving across town in real time, genuinely fun to watch.',
   },
   {
     name: 'Ben A.',
@@ -47,13 +47,13 @@ const testimonials = [
     name: 'Carmen V.',
     route: 'Seattle → Portland',
     rating: 5,
-    quote: "Checked the driver's rating before accepting the bid and I'm glad I did — smoothest delivery I've had shipping anything.",
+    quote: "Checked the driver's rating before accepting the bid and I'm glad I did. Smoothest delivery I've had shipping anything.",
   },
 ];
 
 function TestimonialCard({ t }: { t: (typeof testimonials)[number] }) {
   return (
-    <div className="mx-3 w-80 shrink-0 rounded-card border border-line bg-paper p-5">
+    <div className="mx-3 w-80 shrink-0 border border-line bg-paper p-5">
       <StarRating value={t.rating} readOnly size={16} />
       <p className="mt-3 text-sm leading-relaxed text-ink">&ldquo;{t.quote}&rdquo;</p>
       <p className="mt-4 text-sm font-medium">{t.name}</p>

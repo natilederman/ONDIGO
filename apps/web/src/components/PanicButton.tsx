@@ -32,20 +32,20 @@ export function PanicButton({ deliveryId }: { deliveryId: string | null }) {
     <>
       <button
         onClick={trigger}
-        className="inline-flex items-center gap-2 rounded-full border border-accent px-4 py-2 text-sm font-medium text-accent-dark hover:bg-accent hover:text-paper"
+        className="inline-flex items-center gap-2 rounded-full border border-signal px-4 py-2 text-sm font-medium text-signal hover:bg-signal hover:text-paper"
       >
         Panic button
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-card bg-paper p-6 text-center">
+          <div className="w-full max-w-sm bg-paper p-6 text-center">
             <h3 className="text-lg font-semibold">
               {sending ? 'Sending your location…' : 'Alert logged'}
             </h3>
             <p className="mt-2 text-sm text-muted">{EMERGENCY_CONTACT.note}</p>
             <a
               href={`tel:${EMERGENCY_CONTACT.phone}`}
-              className="mt-4 block rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-paper"
+              className="mt-4 block rounded-full bg-signal px-5 py-2.5 text-sm font-medium text-paper"
             >
               Call {EMERGENCY_CONTACT.label}
             </a>

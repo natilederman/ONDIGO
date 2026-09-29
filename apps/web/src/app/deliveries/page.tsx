@@ -5,8 +5,12 @@ import Link from 'next/link';
 import { deliveryQueries, type Delivery } from '@ondigo/shared';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import { useRequireAuth } from '@/lib/useRequireAuth';
-import { Card } from '@/components/Card';
-import { Badge } from '@/components/Badge';
+import { PageHeader, TableHead, Notice } from '@/components/Page';
+
+const COLS = 'md:grid-cols-[1.55fr_1fr_132px]';
+
+/** In-flight deliveries keep the heavy rule; finished ones drop to a hairline. */
+const SETTLED = new Set(['completed', 'disputed']);
 
 export default function DeliveriesPage() {
   const { user, loading: authLoading } = useRequireAuth();
@@ -27,27 +31,65 @@ export default function DeliveriesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Your deliveries</h1>
+      <PageHeader
+        title="Your deliveries"
+        lede="Everything you are carrying, and everything being carried for you."
+      />
+
       {loading ? (
-        <p className="mt-6 text-sm text-muted">Loading…</p>
+        <Notice>Loading deliveries…</Notice>
       ) : deliveries.length === 0 ? (
-        <p className="mt-6 text-sm text-muted">Nothing yet — matched requests will show up here.</p>
+        <Notice>
+          Nothing yet. Matched requests show up here once a bid is accepted.{' '}
+          <Link href="/requests" className="font-medium text-ink underline">
+            Browse requests
+          </Link>
+          .
+        </Notice>
       ) : (
-        <div className="mt-6 space-y-3">
-          {deliveries.map((d) => (
-            <Link key={d.id} href={`/deliveries/${d.id}`}>
-              <Card className="flex items-center justify-between hover:border-ink">
-                <div>
-                  <p className="font-medium">
-                    {d.driver_id === user.id ? 'Carrying for someone' : 'Being carried for you'}
-                  </p>
-                  <p className="text-sm text-muted">${d.agreed_price.toFixed(2)}</p>
-                </div>
-                <Badge>{d.status.replace('_', ' ')}</Badge>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <>
+          <TableHead cols={['Delivery', 'Status', 'Agreed']} className={COLS} />
+          <div>
+            {deliveries.map((d) => {
+              const done = SETTLED.has(d.status);
+              return (
+                <Link
+                  key={d.id}
+                  href={`/deliveries/${d.id}`}
+                  className={`land row-wash block border-b px-1 py-5 md:grid md:items-center md:gap-6 ${COLS} ${
+                    done ? 'border-line' : 'border-b-2 border-ink'
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between gap-4 md:contents">
+                    <div
+                      className={`text-[clamp(1.15rem,2vw,1.6rem)] font-semibold leading-[1.14] tracking-display md:order-1 ${
+                        done ? 'opacity-45' : ''
+                      }`}
+                    >
+                      {d.driver_id === user.id ? 'Carrying for someone' : 'Being carried for you'}
+                    </div>
+                    <div
+                      className={`tnum shrink-0 text-right text-[clamp(1.05rem,1.5vw,1.3rem)] font-semibold tracking-display md:order-3 ${
+                        done ? 'opacity-45' : ''
+                      }`}
+                    >
+                      ${d.agreed_price.toFixed(2)}
+                    </div>
+                  </div>
+
+                  <div className="mt-2 md:contents">
+                    <div className="text-[13px] font-semibold uppercase tracking-[0.1em] text-steel md:order-2">
+                      {d.status.replace(/_/g, ' ')}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+          <div className="px-1 pt-4 text-[13px] text-steel">
+            {deliveries.length} {deliveries.length === 1 ? 'delivery' : 'deliveries'}
+          </div>
+        </>
       )}
     </div>
   );

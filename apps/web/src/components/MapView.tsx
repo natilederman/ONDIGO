@@ -27,9 +27,9 @@ function FitBounds({ markers }: { markers: MapMarker[] }) {
 function dotIcon(color: string) {
   return L.divIcon({
     className: '',
-    html: `<div style="width:16px;height:16px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,0.2)"></div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,0.25)"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
   });
 }
 
@@ -46,16 +46,21 @@ export function MapView({
   const center: [number, number] = [markers[0].lat, markers[0].lng];
 
   return (
-    <div style={{ height }} className="overflow-hidden rounded-card border border-line">
-      <MapContainer center={center} zoom={6} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+    <div style={{ height }} className="ondigo-map relative overflow-hidden">
+      <MapContainer
+        center={center}
+        zoom={6}
+        scrollWheelZoom={false}
+        style={{ height: '100%', width: '100%' }}
+      >
         <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
+          attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FitBounds markers={markers} />
-        {polyline && <Polyline positions={polyline} pathOptions={{ color: '#FF5A1F', weight: 3 }} />}
+        {polyline && <Polyline positions={polyline} pathOptions={{ color: '#0A0B0D', weight: 2 }} />}
         {markers.map((m, i) => (
-          <Marker key={i} position={[m.lat, m.lng]} icon={dotIcon(m.color ?? '#0A0A0A')}>
+          <Marker key={i} position={[m.lat, m.lng]} icon={dotIcon(m.color ?? '#0A0B0D')}>
             <Popup>{m.label}</Popup>
           </Marker>
         ))}

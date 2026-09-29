@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import {
   profileQueries,
@@ -16,7 +16,8 @@ import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
 import { StarRating } from '@/components/StarRating';
 
-export default function ProfilePage({ params }: { params: { id: string } }) {
+export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { user, loading: authLoading } = useRequireAuth();
   const client = getSupabaseClient();
 
@@ -26,25 +27,25 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    profileQueries.getProfile(client, params.id).then(setProfile);
-    reviewQueries.listReviewsForUser(client, params.id).then(setReviews);
-    if (user && user.id !== params.id) {
-      connectionQueries.isFollowing(client, user.id, params.id).then(setFollowing);
+    profileQueries.getProfile(client, id).then(setProfile);
+    reviewQueries.listReviewsForUser(client, id).then(setReviews);
+    if (user && user.id !== id) {
+      connectionQueries.isFollowing(client, user.id, id).then(setFollowing);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id, user?.id]);
+  }, [id, user?.id]);
 
   if (authLoading || !profile || !user) return null;
 
-  const isSelf = user.id === params.id;
+  const isSelf = user.id === id;
 
   const toggleFollow = async () => {
     setBusy(true);
     try {
       if (following) {
-        await connectionQueries.unfollow(client, user.id, params.id);
+        await connectionQueries.unfollow(client, user.id, id);
       } else {
-        await connectionQueries.follow(client, user.id, params.id);
+        await connectionQueries.follow(client, user.id, id);
       }
       setFollowing(!following);
     } finally {

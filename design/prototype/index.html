@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ONDIGO Departures Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="map-data.js"></script>
+<style>
+  :root{
+    --paper:#ffffff; --ground:#fafafa; --ash:#f1f1f2; --ash-2:#e6e7e9;
+    --rule:#e3e4e6; --rule-hi:#cfd1d4;
+    --ink:#0a0b0d; --steel:#6a6f77; --steel-2:#55595f; --signal:#d92c1f;
+    --fade:rgba(10,11,13,.045); --sel:rgba(10,11,13,.1);
+    --edge-dark:rgba(10,11,13,.10); --edge-light:rgba(255,255,255,.95);
+    --tex-blend:multiply; --tex-opacity:.55; --tex-filter:none;
+    --ease:cubic-bezier(.23,1,.32,1);
+    --font:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0a0b0d; --ground:#0e0f12; --ash:#16181c; --ash-2:#1d2025;
+      --rule:#232528; --rule-hi:#33363b;
+      --ink:#f3f4f5; --steel:#9298a1; --steel-2:#b4bac2; --signal:#ff4a3d;
+      --fade:rgba(255,255,255,.05); --sel:rgba(255,255,255,.16);
+      --edge-dark:rgba(0,0,0,.55); --edge-light:rgba(255,255,255,.07);
+      --tex-blend:screen; --tex-opacity:.06; --tex-filter:invert(1);
+      color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink)}
+  body{font-family:var(--font);font-feature-settings:"tnum" 1,"lnum" 1;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--sel)}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:2px}
+  a{color:inherit;text-underline-offset:.22em;text-decoration-thickness:1px}
+  .tnum{font-variant-numeric:tabular-nums lining-nums}
+  .wrap{width:100%;max-width:1320px;margin-inline:auto;padding-inline:24px}
+  @media (max-width:560px){.wrap{padding-inline:18px}}
+
+  header.bar{position:sticky;top:0;z-index:40;height:64px;display:flex;align-items:center;border-bottom:1px solid var(--rule);
+    background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px)}
+  .bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:24px}
+  .mark{font-weight:700;font-size:15px;letter-spacing:.18em;text-decoration:none}
+  .bar nav{display:flex;gap:28px}
+  .bar nav a{font-size:13.5px;font-weight:500;color:var(--steel-2);text-decoration:none}
+  .btn{font-family:var(--font);font-size:13.5px;font-weight:600;padding:10px 18px;border-radius:999px;border:1px solid var(--ink);
+    background:var(--ink);color:var(--paper);cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:8px;
+    transition:transform 160ms var(--ease),opacity 160ms var(--ease)}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule-hi)}
+
+  /* prototype controls, not part of the product */
+  .proto{border-bottom:1px solid var(--rule);background:var(--ground)}
+  .proto .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:40px;flex-wrap:wrap;padding-block:6px}
+  .proto .k{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--steel)}
+  .seg{display:inline-flex;border:1px solid var(--rule-hi)}
+  .seg button{font:inherit;font-size:12px;font-weight:600;padding:5px 11px;border:0;background:transparent;color:var(--steel-2);cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+  /* lead */
+  .lead{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;padding-block:34px 14px}
+  .lead h1{margin:0;font-size:clamp(1.5rem,2.4vw,1.95rem);font-weight:600;letter-spacing:-.035em;line-height:1.1;max-width:24ch;text-wrap:balance}
+  .lead p{margin:10px 0 0;color:var(--steel-2);font-size:15px;line-height:1.55;max-width:56ch}
+  .legend{display:flex;gap:18px;align-items:center;font-size:12px;color:var(--steel);white-space:nowrap;padding-bottom:6px}
+  .legend i{display:inline-block;width:26px;height:0;border-top:1.6px solid var(--ink);vertical-align:middle;margin-right:7px}
+  .legend i.trip{border-top:1.2px dashed var(--steel)}
+  .legend i.dots{border:0;letter-spacing:2px;color:var(--steel);width:auto;height:auto;font-weight:700;line-height:0}
+  .zoomhint{display:none;font-size:12.5px;color:var(--steel-2);text-align:right;padding-bottom:6px;white-space:nowrap}
+  .zoomhint b{color:var(--ink);font-weight:600}
+  .zoomhint{display:block}
+  .route.hide,.cont.hide{opacity:0 !important;pointer-events:none}
+  .hit.hide{pointer-events:none}
+  .backlink{display:none;white-space:nowrap;font-size:13px;color:var(--steel-2);text-decoration:none;border:1px solid var(--rule-hi);border-radius:999px;padding:6px 12px}
+
+  /* stage */
+  .stage{position:relative;border-top:1px solid var(--ink);padding-top:14px}
+  .stage-inner{height:min(calc(100vh - 300px),740px);min-height:380px}
+  svg#map{display:block;width:100%;height:100%;overflow:hidden;cursor:default}
+  #bg{fill:transparent}
+  .st{fill:var(--ash);stroke:none;transition:fill 160ms var(--ease)}
+  .st.hot{cursor:pointer}
+  .st.hot:hover,.st.hover{fill:var(--ash-2)}
+  .st.active{fill:var(--ash)}
+  .st:focus{outline:none}
+  .st:focus-visible{outline:none;stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+  .st.active,.st.active:focus-visible{stroke:none}
+  .edge-d{fill:var(--edge-dark)}
+  .edge-l{fill:var(--edge-light)}
+  .bd{fill:none;stroke:var(--rule-hi);stroke-width:.7;vector-effect:non-scaling-stroke;stroke-linejoin:round;pointer-events:none}
+  .bd.active{stroke:var(--ink);stroke-width:1.1}
+  #texture{mix-blend-mode:var(--tex-blend);opacity:var(--tex-opacity);filter:var(--tex-filter);pointer-events:none}
+  .num{font-family:var(--font);font-weight:600;fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none;
+    paint-order:stroke;stroke:var(--paper);stroke-width:4px;stroke-linejoin:round}
+  .num.top{font-weight:700}
+  .leader{stroke:var(--rule-hi);stroke-width:.8;fill:none}
+  .city{fill:var(--ink)}
+  .city.quiet{fill:var(--steel);opacity:.55}
+  .clab{font-family:var(--font);font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--paper);stroke-linejoin:round;pointer-events:none}
+  .clab.quiet{fill:var(--steel);font-weight:500}
+  .clab .ct{fill:var(--steel);font-weight:500}
+  body[data-level="country"] #cities{pointer-events:none}
+  body[data-level="country"] .legend{display:none}
+  .cityg{transition:opacity 180ms var(--ease)}
+  .cityg.hot{cursor:pointer}
+  .chit{fill:transparent;stroke:none}
+  .city{transition:transform 160ms var(--ease)}
+  .cityg.hot:hover .city,.cityg.sel .city{transform:scale(1.5)}
+  .cityg.sel .clab{font-weight:700}
+  .cityg.sel .clab .ct{fill:var(--ink)}
+  .cityg.faint{opacity:.4}
+  .bcount{font-family:var(--font);font-weight:600;fill:var(--ink);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--paper);stroke-linejoin:round;pointer-events:none;transition:opacity 220ms var(--ease)}
+  .bcount.dim{opacity:.28}
+  svg#map.grab{cursor:grab}
+  .route{fill:none;stroke:var(--ink);stroke-width:1.7;vector-effect:non-scaling-stroke;stroke-linecap:round;cursor:pointer;transition:opacity 220ms var(--ease),stroke-width 160ms var(--ease)}
+  .route.trip{stroke:var(--steel);stroke-width:1.15}
+  .route.dim{opacity:.28}
+  .route.sel{stroke-width:2.6}
+  .route.trip.sel{stroke:var(--ink)}
+  .hit{fill:none;stroke:transparent;vector-effect:non-scaling-stroke;stroke-width:16;cursor:pointer}
+  .cont{fill:var(--steel)}
+  .cont.dim{opacity:.28}
+  #hover{position:absolute;pointer-events:none;background:var(--ink);color:var(--paper);font-size:12px;font-weight:600;padding:5px 9px;
+    transform:translate(-50%,-140%);white-space:nowrap;opacity:0;transition:opacity 120ms var(--ease)}
+  #hover.on{opacity:1}
+  #hover small{font-weight:400;opacity:.75;margin-left:6px}
+
+  /* under the map */
+  .under{margin-top:8px}
+  #bar{display:none;border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);padding:18px 4px 18px;
+    grid-template-columns:1.6fr 1fr auto auto;gap:24px;align-items:center}
+  #bar.on{display:grid}
+  #bar .r{font-size:clamp(1.25rem,2.2vw,1.8rem);font-weight:600;letter-spacing:-.035em;line-height:1.1}
+  #bar .r .arw{color:var(--steel);font-weight:400;margin:0 8px}
+  #bar .r small{display:block;margin-top:5px;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--steel)}
+  #bar .meta{font-size:14px;color:var(--steel-2);line-height:1.5}
+  #bar .meta b{display:block;color:var(--ink);font-weight:600}
+  #bar .price{text-align:right;font-size:clamp(1.15rem,1.8vw,1.5rem);font-weight:600;letter-spacing:-.03em}
+  #bar .price small{display:block;font-size:11px;font-weight:600;letter-spacing:.1em;color:var(--steel);margin-top:3px}
+  #bar .price .live{color:var(--signal)}
+  #bar .x{font:inherit;background:transparent;border:1px solid var(--rule-hi);border-radius:999px;color:var(--steel-2);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer}
+
+  #list{margin-top:6px}
+  .lhead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:16px 4px 10px;border-bottom:1px solid var(--ink)}
+  .lhead h2{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .lhead span{font-size:12px;color:var(--steel);display:inline-flex;align-items:center;gap:12px}
+  .lhead .x{font:inherit;background:transparent;border:1px solid var(--rule-hi);border-radius:999px;color:var(--steel-2);font-size:12px;font-weight:600;padding:5px 11px;cursor:pointer}
+  .lsub{padding:18px 4px 6px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--steel);border-bottom:1px solid var(--rule)}
+  .row{display:grid;grid-template-columns:1.6fr 1fr 96px 120px;gap:22px;align-items:center;padding:16px 4px;border-bottom:1px solid var(--rule);
+    cursor:pointer;position:relative;background:transparent;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;font:inherit;color:inherit}
+  .row::after{content:"";position:absolute;inset:0 -16px;background:linear-gradient(90deg,var(--fade),transparent 62%);opacity:0;pointer-events:none;transition:opacity 200ms var(--ease)}
+  @media (hover:hover){.row:hover::after{opacity:1}}
+  .row.sel{border-bottom:2px solid var(--ink)}
+  .row .rt{font-size:clamp(1.05rem,1.6vw,1.35rem);font-weight:600;letter-spacing:-.03em;line-height:1.12}
+  .row .rt .arw{color:var(--steel);font-weight:400;margin:0 7px}
+  .row .rt .st{font-size:.68em;color:var(--steel);font-weight:600;margin-left:6px;letter-spacing:.06em}
+  .row .it{font-size:14px;color:var(--steel-2)}
+  .row .pr{text-align:right;font-size:1.05rem;font-weight:600;letter-spacing:-.03em}
+  .row .cl{text-align:right;font-size:13px;font-weight:600}
+  .row .cl.live{color:var(--signal)}
+  .row .cl small{display:block;font-size:10.5px;letter-spacing:.1em;color:var(--steel);margin-top:2px}
+  .empty{padding:20px 4px;color:var(--steel-2);font-size:14.5px}
+  .gate{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;border-top:1px solid var(--ink);border-bottom:1px solid var(--rule);padding:20px 4px}
+  .gate p{margin:0;font-size:15px;line-height:1.5;color:var(--steel-2);max-width:56ch}
+  .gate b{color:var(--ink);font-weight:600}
+
+  /* phone: ranked state list replaces the country map */
+  #mobileStates{display:none;border-top:1px solid var(--ink)}
+  #mobileStates button{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:baseline;width:100%;padding:14px 2px;border:0;border-bottom:1px solid var(--rule);
+    background:transparent;font:inherit;color:inherit;text-align:left;cursor:pointer}
+  #mobileStates .ab{font-size:12px;font-weight:600;letter-spacing:.1em;color:var(--steel)}
+  #mobileStates .nm{font-size:16px;font-weight:600;letter-spacing:-.02em}
+  #mobileStates .ct{font-size:16px;font-weight:600}
+  #mobileStates .ct.zero{color:var(--steel);font-weight:500}
+
+  /* the rest of the homepage, unchanged in content */
+  .sec{margin-top:96px}
+  .sec.band{margin-inline:-24px;padding:80px 24px;background:var(--ground);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  .sec h2{margin:0;max-width:20ch;font-size:clamp(1.4rem,2.3vw,1.85rem);font-weight:600;letter-spacing:-.035em;line-height:1.12;text-wrap:balance}
+  .sec p{margin:16px 0 0;max-width:62ch;font-size:15.5px;line-height:1.6;color:var(--steel-2)}
+  .two{display:grid;gap:48px}
+  .stats{display:flex;flex-wrap:wrap;gap:28px 56px;margin-top:36px}
+  .stats .big{font-size:clamp(1.6rem,2.6vw,2.2rem);font-weight:600;letter-spacing:-.035em;line-height:1}
+  .stats .cap{margin-top:8px;max-width:22ch;font-size:13px;line-height:1.35;color:var(--steel)}
+  .bids{border-top:1px solid var(--ink)}
+  .bids .b{display:grid;grid-template-columns:1fr auto auto;gap:20px;align-items:baseline;padding:16px 2px;border-bottom:1px solid var(--rule)}
+  .bids .b.lead-bid{border-bottom:2px solid var(--ink)}
+  .bids .who{font-size:15px;font-weight:500}
+  .bids .who small{display:block;margin-top:2px;font-size:12.5px;font-weight:400;color:var(--steel)}
+  .bids .amt{font-size:clamp(1.15rem,1.7vw,1.45rem);font-weight:600;letter-spacing:-.035em}
+  .bids .lead-bid .amt{font-size:clamp(1.4rem,2.1vw,1.8rem)}
+  .bids .b:not(.lead-bid) .who,.bids .b:not(.lead-bid) .amt{opacity:.45;text-decoration:line-through}
+  .bids .b:not(.lead-bid) .who small{text-decoration:none}
+  .bids .ago{min-width:62px;text-align:right;font-size:12px;color:var(--steel)}
+  .bids-foot{display:flex;justify-content:space-between;gap:16px;padding:16px 2px 0;font-size:12.5px;color:var(--steel)}
+  .bids-foot .live{color:var(--signal);font-weight:600;font-size:13.5px}
+  .figs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .figs figure{margin:0;border:1px solid var(--rule);background:var(--paper)}
+  .figs img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;filter:grayscale(1) contrast(1.04)}
+  .figs figcaption{display:flex;justify-content:space-between;gap:10px;align-items:baseline;border-top:1px solid var(--rule);padding:10px 12px;font-size:12px;color:var(--steel)}
+  .figs figcaption b{color:var(--ink);font-weight:600;letter-spacing:-.01em}
+  .chain{list-style:none;margin:28px 0 0;padding:0;border-top:1px solid var(--rule)}
+  .chain li{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:baseline;padding:16px 2px;border-bottom:1px solid var(--rule);font-size:14.5px}
+  .chain li b{font-weight:500}
+  .chain li span{font-size:13px;color:var(--steel)}
+  .drive{display:grid;gap:40px;align-items:end}
+  .demo{margin:64px 0 40px;border-top:1px solid var(--rule);padding-top:20px;font-size:12px;line-height:1.6;color:var(--steel)}
+  .demo b{color:var(--steel-2);font-weight:600}
+  @media (min-width:1024px){
+    .two{grid-template-columns:1fr 1.15fr;gap:80px}
+    .two.handoff{grid-template-columns:1.1fr 1fr;align-items:center}
+    .drive{grid-template-columns:1fr auto}
+  }
+  @media (max-width:560px){.sec.band{margin-inline:-18px;padding-inline:18px}.sec{margin-top:72px}.bids .ago{display:none}}
+
+  @media (max-width:860px){
+    .lead{flex-direction:column;align-items:flex-start;gap:12px}
+    #bar{grid-template-columns:1fr auto}
+    #bar .meta{grid-column:1 / -1}
+    .row{grid-template-columns:1fr auto;gap:6px 16px}
+    .row .it{grid-column:1}
+    .row .pr{grid-row:1;grid-column:2}
+    .row .cl{grid-column:2}
+    .gate{grid-template-columns:1fr}
+  }
+  @media (max-width:720px){
+    .bar nav{display:none}.bar .wrap{gap:12px}.mark{letter-spacing:.12em}#authArea .btn{padding:8px 14px}
+    .stage-inner{height:60vh;min-height:360px}
+    body[data-level="country"] .stage-inner{display:none}
+    body[data-level="country"] #mobileStates{display:block}
+    body[data-level="state"] .backlink{display:inline-flex}
+    .legend{display:none}.zoomhint{text-align:left;white-space:normal}
+    body[data-level="country"] .zoomhint{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
+</style>
+</head>
+<body data-level="country">
+
+<header class="bar">
+  <div class="wrap">
+    <a href="/" class="mark">ONDIGO</a>
+    <nav><a href="/trips">Trips</a><a href="/requests">Requests</a><a href="/deliveries">Deliveries</a></nav>
+    <div id="authArea"></div>
+  </div>
+</header>
+
+<div class="proto">
+  <div class="wrap">
+    <span class="k">Prototype, sample data</span>
+    <div class="seg" role="group" aria-label="Simulate sign-in state">
+      <button type="button" id="segOut" aria-pressed="true">Signed out</button>
+      <button type="button" id="segIn" aria-pressed="false">Signed in</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="lead">
+    <div>
+      <h1 id="h1">Where things need collecting from.</h1>
+      <p id="p1">Each number is an open request leaving that state. Pinch to zoom for more routes and towns, or open a state.</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <a href="#" class="backlink" id="backlink">All states</a>
+      <div><div class="legend" id="legend"><span><i></i>Request</span><span><i class="trip"></i>Driver trip</span><span><i class="dots">···</i> continues out of state</span></div>
+      <div class="zoomhint" id="zoomHint"></div></div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="stage-inner"><svg id="map" viewBox="0 0 975 610" role="img" aria-label="Map of the United States with the number of open delivery requests leaving each state">
+      <defs>
+        <pattern id="tex" patternUnits="userSpaceOnUse" width="975" height="610">
+          <image href="texture.jpg" width="975" height="610" preserveAspectRatio="none"></image>
+        </pattern>
+      </defs>
+      <rect id="bg" x="-2000" y="-2000" width="5000" height="5000"></rect>
+      <g id="zoom">
+        <g id="edgeD"></g>
+        <g id="edgeL"></g>
+        <g id="states"></g>
+        <g id="texture"></g>
+        <g id="borders"></g>
+        <g id="detail"><g id="routes"></g><g id="conts"></g><g id="cities"></g></g>
+      </g>
+      <g id="labels"></g>
+    </svg></div>
+    <div id="hover"></div>
+  </div>
+
+  <div id="mobileStates"></div>
+
+  <div class="under">
+    <div id="bar"></div>
+    <div id="list"></div>
+  </div>
+
+  <!-- Bidding -->
+  <section class="sec band">
+    <div class="two">
+      <div>
+        <h2>Drivers bid against each other. You take the best one.</h2>
+        <p>A request can be posted at a fixed price, or opened as an auction with a countdown. Drivers already heading that way bid the price down. When the clock runs out the request matches automatically and escrow holds the money until delivery is confirmed.</p>
+        <div class="stats">
+          <div><div class="big tnum">$55</div><div class="cap">Current leading bid, down from an $80 opening ask</div></div>
+          <div><div class="big tnum">4</div><div class="cap">Drivers competing on this one route</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="bids">
+          <div class="b lead-bid"><div class="who">Drew Okafor<small>Truck · 4.8 rating · 61 deliveries</small></div><div class="amt tnum">$55</div><div class="ago">2m ago</div></div>
+          <div class="b"><div class="who">Alice Rivera<small>Car · 4.9 rating · 128 deliveries</small></div><div class="amt tnum">$62</div><div class="ago">9m ago</div></div>
+          <div class="b"><div class="who">Ben Sorensen<small>Bike · 4.7 rating · 34 deliveries</small></div><div class="amt tnum">$68</div><div class="ago">21m ago</div></div>
+          <div class="b"><div class="who">Drew Okafor<small>Truck · 4.8 rating · 61 deliveries</small></div><div class="amt tnum">$74</div><div class="ago">38m ago</div></div>
+        </div>
+        <div class="bids-foot"><span>Seattle to Portland, bookshelf</span><span class="live tnum">19:00 left</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Handoff verification -->
+  <section class="sec two handoff">
+    <div class="figs">
+      <figure><img src="img/handoff-pickup.jpg" alt="Pickup verification photograph"><figcaption><b>Pickup</b><span class="tnum">09:42, Seattle</span></figcaption></figure>
+      <figure><img src="img/handoff-dropoff.jpg" alt="Drop-off verification photograph"><figcaption><b>Drop-off</b><span class="tnum">14:08, Portland</span></figcaption></figure>
+    </div>
+    <div>
+      <h2>The part where you hand a stranger your things.</h2>
+      <p>Every delivery leaves a record. Both ends are photographed and timestamped, the money sits in escrow until the drop-off is confirmed, and each side rates the other afterwards. Nothing here asks you to simply trust the other person.</p>
+      <ul class="chain">
+        <li><b>Escrow funded</b><span>Before pickup</span></li>
+        <li><b>Pickup photographed</b><span>Timestamped, geotagged</span></li>
+        <li><b>Live tracking</b><span>Visible to both sides</span></li>
+        <li><b>Drop-off photographed</b><span>Confirmed by the recipient</span></li>
+        <li><b>Escrow released</b><span>After confirmation</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Driver path -->
+  <section class="sec band">
+    <div class="drive">
+      <div>
+        <h2>You were making the drive anyway.</h2>
+        <p>Post your route, your dates, and how much room you have. Bid on whatever is heading the same way. The empty seat and the empty trunk are the whole business.</p>
+        <div class="stats">
+          <div><div class="big">Car</div><div class="cap">A box, a bag, a framed print</div></div>
+          <div><div class="big">Bike</div><div class="cap">Same-day local, small and light</div></div>
+          <div><div class="big">Truck</div><div class="cap">Furniture, appliances, the awkward things</div></div>
+        </div>
+      </div>
+      <a href="/trips/new" class="btn">Post a trip</a>
+    </div>
+  </section>
+
+  <p class="demo"><b>Demo build.</b> Payments are simulated: escrow hold, release and refund run as real ledger logic, but no card is ever charged. The panic button logs an alert and surfaces emergency contact details; it is not connected to emergency dispatch. Routes, bids and ratings shown here are seeded sample data.</p>
+</main>
+
+<script>
+(function () {
+  const D = window.ONDIGO_MAP;
+  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dur = ms => REDUCED ? 0 : ms;
+  const SMALL = new Set(['RI','DE','CT','NJ','MA','NH','VT','MD','DC']);
+  const byAbbr = Object.fromEntries(D.states.features.map(f => [f.properties.abbr, f]));
+
+  // ---------- state of the prototype ----------
+  let signedIn = false;
+  let level = 'country';          // 'country' | 'state'
+  let open = null;                // feature of the open state
+  let scope = null;               // abbr of the open state, null for the whole country
+  let k = 1, tx = 0, ty = 0;      // current zoom transform, in map units
+  let kRel = 1;                   // zoom relative to the level's base (country: k itself)
+  let base = null;                // state-fit transform, the anchor for pinch zoom inside a state
+  let selected = null;            // selected request or trip (bar)
+  let city = null;                // pressed city, inside an open state
+  let bundles = [];               // that city's connections, one line per destination
+  let cityEls = [];               // cities drawn at this level
+
+  // ---------- projection ----------
+  const W = 975, H = 610;
+  const mapEl = document.getElementById('map');
+  const isPhone = () => matchMedia('(max-width: 720px)').matches;
+  // how the viewBox sits in the stage: the SVG letterboxes, so there is a scale and an offset
+  const frame = () => {
+    const r = mapEl.getBoundingClientRect(), vb = mapEl.viewBox.baseVal;
+    const s = r.width && vb.width ? Math.min(r.width / vb.width, r.height / vb.height) : 1;
+    return { s, ox: (r.width - vb.width * s) / 2, oy: (r.height - vb.height * s) / 2, w: r.width, h: r.height };
+  };
+  // map units per CSS pixel, so dots, labels and dashes render at intended pixel sizes on any stage
+  const pxUnits = () => 1 / frame().s;
+  const viewH = () => { const r = mapEl.getBoundingClientRect(); return isPhone() && r.width ? Math.round(W * r.height / r.width) : H; };
+  const projection = d3.geoAlbersUsa().fitExtent([[12, 12], [W - 12, H - 12]], D.states);
+  const path = d3.geoPath(projection);
+
+  // ---------- derive activity ----------
+  const stateOf = (lng, lat) => {
+    for (const f of D.states.features) if (d3.geoContains(f, [lng, lat])) return f.properties.abbr;
+    return null;
+  };
+  D.requests.forEach(r => { r.kind = 'request'; r.fromSt = stateOf(r.from.lng, r.from.lat) || r.from.state; r.toSt = stateOf(r.to.lng, r.to.lat) || r.to.state; });
+  D.trips.forEach(t => { t.kind = 'trip'; t.fromSt = stateOf(t.from.lng, t.from.lat) || t.from.state; t.toSt = stateOf(t.to.lng, t.to.lat) || t.to.state; });
+  const all = [...D.requests, ...D.trips];
+  // a request belongs to the state it departs from
+  const counts = {};
+  D.requests.forEach(r => { counts[r.fromSt] = (counts[r.fromSt] || 0) + 1; });
+  const maxCount = Math.max(...Object.values(counts));
+  const activeStates = Object.keys(counts).length;
+  const requestsOf = ab => D.requests.filter(r => r.fromSt === ab);
+  const tripsOf = ab => D.trips.filter(t => t.fromSt === ab || t.toSt === ab);
+
+  // cities: Natural Earth places with population, plus every route endpoint; lit = has activity
+  const cityKey = (st, name) => st + '|' + name.toLowerCase();
+  const lit = new Set(); all.forEach(i => { lit.add(cityKey(i.from.state, i.from.city)); lit.add(cityKey(i.to.state, i.to.city)); });
+  const have = new Set(D.cities.map(c => cityKey(c.state, c.name)));
+  all.forEach(i => [i.from, i.to].forEach(e => { const key = cityKey(e.state, e.city); if (!have.has(key)) { have.add(key); D.cities.push({ state: e.state, name: e.city, lat: e.lat, lng: e.lng, pop: 60000 }); } }));
+  D.cities.forEach(c => { c.xy = projection([c.lng, c.lat]); c.lit = lit.has(cityKey(c.state, c.name)); });
+  const cityList = D.cities.filter(c => c.xy).sort((a, b) => (b.lit - a.lit) || (b.pop - a.pop));
+
+  // what touches a city: requests leaving it, requests arriving, driver trips through it
+  const endKey = e => cityKey(e.state, e.city);
+  D.cities.forEach(c => {
+    const key = cityKey(c.state, c.name);
+    c.leaving = D.requests.filter(r => endKey(r.from) === key);
+    c.arriving = D.requests.filter(r => endKey(r.to) === key);
+    c.trips = D.trips.filter(t => endKey(t.from) === key || endKey(t.to) === key);
+    c.n = c.leaving.length + c.arriving.length;
+  });
+
+  // ---------- header auth mock ----------
+  const authArea = document.getElementById('authArea');
+  function renderAuth() {
+    authArea.innerHTML = signedIn
+      ? '<span style="font-size:13.5px;font-weight:500;margin-right:16px">Alice Rivera</span><a href="/login" style="font-size:13.5px;color:var(--steel-2);text-decoration:none">Sign out</a>'
+      : '<a href="/login" style="font-size:13.5px;font-weight:500;color:var(--steel-2);text-decoration:none;margin-right:16px">Log in</a><a href="/signup" class="btn">Sign up</a>';
+  }
+  document.getElementById('segOut').onclick = () => setSigned(false);
+  document.getElementById('segIn').onclick = () => setSigned(true);
+  function setSigned(v) {
+    signedIn = v;
+    document.getElementById('segOut').setAttribute('aria-pressed', String(!v));
+    document.getElementById('segIn').setAttribute('aria-pressed', String(v));
+    renderAuth(); closeBar(); setCopy(); renderUnder(); if (city) drawBundles(true); relayout();
+  }
+  renderAuth();
+
+  // ---------- country map ----------
+  const svg = d3.select('#map');
+  const gZoom = d3.select('#zoom');
+  const layers = { edgeD: d3.select('#edgeD'), edgeL: d3.select('#edgeL'), states: d3.select('#states'), texture: d3.select('#texture'), borders: d3.select('#borders') };
+  const feats = D.states.features;
+
+  layers.edgeD.attr('transform', 'translate(1,1.4)').selectAll('path').data(feats).join('path').attr('class', 'edge-d').attr('d', path).attr('data-ab', f => f.properties.abbr);
+  layers.edgeL.attr('transform', 'translate(-.6,-.8)').selectAll('path').data(feats).join('path').attr('class', 'edge-l').attr('d', path).attr('data-ab', f => f.properties.abbr);
+  const statePaths = layers.states.selectAll('path').data(feats).join('path')
+    .attr('class', f => 'st' + (counts[f.properties.abbr] ? ' hot' : ''))
+    .attr('d', path).attr('data-ab', f => f.properties.abbr)
+    .attr('tabindex', f => counts[f.properties.abbr] ? 0 : -1)
+    .attr('role', 'button')
+    .attr('aria-label', f => `${f.properties.name}, ${counts[f.properties.abbr] || 0} open requests leaving`)
+    .style('cursor', 'pointer');
+  layers.texture.selectAll('path').data(feats).join('path').attr('fill', 'url(#tex)').attr('d', path).attr('data-ab', f => f.properties.abbr);
+  layers.borders.selectAll('path').data(feats).join('path').attr('class', 'bd').attr('d', path).attr('data-ab', f => f.properties.abbr);
+
+  // numbers live outside the zoomed group so they keep their pixel size; positions follow the zoom
+  const gLabels = d3.select('#labels');
+  const counted = feats.filter(f => counts[f.properties.abbr]);
+  const cent = new Map(counted.map(f => [f.properties.abbr, path.centroid(f)]));
+  const small = counted.filter(f => SMALL.has(f.properties.abbr)).sort((a, b) => cent.get(a.properties.abbr)[1] - cent.get(b.properties.abbr)[1]);
+  const smallSlots = new Map(small.map((f, i) => [f.properties.abbr, i]));
+  const leaders = gLabels.selectAll('path.leader').data(small).join('path').attr('class', 'leader').attr('data-ab', f => f.properties.abbr);
+  const nums = gLabels.selectAll('text.num').data(counted).join('text')
+    .attr('class', f => 'num' + (counts[f.properties.abbr] === maxCount ? ' top' : '')).attr('data-ab', f => f.properties.abbr).text(f => counts[f.properties.abbr]);
+
+  // returns the screen rectangles the numbers occupy, so city labels stay clear of them
+  function layoutNumbers() {
+    const fr = frame(), pu = 1 / fr.s, rects = [];
+    const slotMode = k < 1.5;
+    nums.each(function (f) {
+      const ab = f.properties.abbr, c = cent.get(ab);
+      const px = tx + k * c[0], py = ty + k * c[1];
+      let x = px, y = py;
+      const size = (counts[ab] === maxCount ? 28 : 21) * pu;
+      const ld = leaders.filter(d => d === f);
+      if (slotMode && smallSlots.has(ab)) { x = W - 28; y = 150 + smallSlots.get(ab) * 26; ld.attr('d', `M${px},${py} L${x - 12},${y}`).style('display', null); }
+      else ld.style('display', 'none');
+      d3.select(this).attr('x', x).attr('y', y).attr('font-size', size);
+      const w = String(counts[ab]).length * 0.62 * size * fr.s + 10, h = size * fr.s + 6;
+      const cx = fr.ox + x * fr.s, cy = fr.oy + y * fr.s;
+      rects.push([cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2]);
+    });
+    return rects;
+  }
+
+  // hover label
+  const hover = document.getElementById('hover');
+  const stage = document.querySelector('.stage');
+  statePaths.on('mousemove', (ev, f) => {
+    if (level !== 'country') return;
+    const r = stage.getBoundingClientRect();
+    hover.style.left = (ev.clientX - r.left) + 'px'; hover.style.top = (ev.clientY - r.top) + 'px';
+    const n = counts[f.properties.abbr] || 0;
+    hover.innerHTML = f.properties.name + `<small>${n ? n + (n === 1 ? ' request' : ' requests') : 'no open requests'}</small>`;
+    hover.classList.add('on');
+  }).on('mouseleave', () => hover.classList.remove('on'))
+    .on('click', (ev, f) => { if (level === 'country') openState(f); else if (f === open && city) clearCity(); })
+    .on('keydown', (ev, f) => { if ((ev.key === 'Enter' || ev.key === ' ') && level === 'country') { ev.preventDefault(); openState(f); } });
+
+  // click outside the open state returns to the country
+  d3.select('#bg').on('click', () => { if (level === 'state') closeState(); });
+  document.addEventListener('keydown', e => { if (e.key !== 'Escape' || level !== 'state') return; if (city) clearCity(); else closeState(); });
+  document.getElementById('backlink').addEventListener('click', e => { e.preventDefault(); if (level === 'state') closeState(); });
+
+  // ---------- zoom: pinch or ctrl+scroll, drag to pan; plain scroll keeps scrolling the page ----------
+  const zoomFilter = ev => ev.type === 'wheel' ? (ev.ctrlKey || ev.metaKey) : !ev.button;
+  function applyTransform() {
+    gZoom.attr('transform', `translate(${tx},${ty}) scale(${k})`);
+    d3.select('#tex').attr('patternTransform', `scale(${1 / k})`);
+    layers.edgeD.attr('transform', `translate(${1 / k},${1.4 / k})`);
+    layers.edgeL.attr('transform', `translate(${-.6 / k},${-.8 / k})`);
+    mapEl.classList.toggle('grab', k > 1.02);
+  }
+  const zoomC = d3.zoom().scaleExtent([1, 7]).translateExtent([[0, 0], [W, H]]).filter(zoomFilter)
+    .on('zoom', ev => {
+      if (level !== 'country') return;
+      const t = ev.transform; k = t.k; tx = t.x; ty = t.y; kRel = t.k;
+      applyTransform(); relayout();
+    });
+  const zoomB = d3.zoom().scaleExtent([1, 8]).filter(zoomFilter)
+    .on('zoom', ev => {
+      if (!base) return;
+      const t = ev.transform; kRel = t.k;
+      k = base.k * t.k; tx = t.x + t.k * base.tx; ty = t.y + t.k * base.ty;
+      applyTransform(); relayout();
+    });
+
+  // ---------- open a state ----------
+  function openState(f) {
+    level = 'state'; open = f; scope = f.properties.abbr; document.body.dataset.level = 'state';
+    hover.classList.remove('on'); closeBar();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    svg.on('.zoom', null); mapEl.classList.remove('grab');
+    const ab = f.properties.abbr;
+    const [[x0, y0], [x1, y1]] = path.bounds(f);
+    const dx = x1 - x0, dy = y1 - y0, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    const VH = viewH(); svg.attr('viewBox', `0 0 ${W} ${VH}`);
+    const K = Math.min(10, 0.86 / Math.max(dx / W, dy / VH));
+    const TX = W / 2 - K * cx, TY = VH / 2 - K * cy;
+
+    // 1. everything else fades: other states, the numbers, the country's routes and towns
+    svg.selectAll(`[data-ab]:not([data-ab="${ab}"])`).transition('fade').duration(dur(360)).ease(d3.easeCubicOut).style('opacity', 0).style('pointer-events', 'none');
+    gLabels.selectAll('.num, .leader').transition().duration(dur(260)).style('opacity', 0);
+    d3.select('#detail').selectAll('#routes > *, #conts > *, #cities > *').interrupt().transition().duration(dur(240)).style('opacity', 0).remove();
+    cityEls = [];
+    statePaths.filter(d => d === f).classed('active', true);
+    layers.borders.selectAll('path').filter(d => d === f).classed('active', true);
+
+    // relief offsets shrink with the zoom so the edge stays thin
+    layers.edgeD.transition().duration(dur(750)).attr('transform', `translate(${1 / K},${1.4 / K})`);
+    layers.edgeL.transition().duration(dur(750)).attr('transform', `translate(${-.6 / K},${-.8 / K})`);
+
+    // 2. the state rises to fill the stage
+    gZoom.transition('zoom').delay(dur(120)).duration(dur(780)).ease(d3.easeCubicInOut)
+      .attr('transform', `translate(${TX},${TY}) scale(${K})`)
+      .on('end', () => {
+        k = K; tx = TX; ty = TY; base = { k, tx, ty }; kRel = 1;
+        d3.select('#tex').attr('patternTransform', `scale(${1 / k})`);
+        buildDetail(false); svg.call(zoomB); svg.call(zoomB.transform, d3.zoomIdentity);
+      });
+    setCopy(); renderUnder();
+  }
+
+  function closeState() {
+    const f = open; if (!f) return;
+    closeBar(); svg.on('.zoom', null); base = null; city = null; bundles = []; cityEls = [];
+    document.getElementById('zoomHint').textContent = '';
+    d3.select('#detail').selectAll('#routes > *, #conts > *, #cities > *').interrupt().transition().duration(dur(220)).style('opacity', 0).remove();
+    gZoom.transition('zoom').duration(dur(640)).ease(d3.easeCubicInOut).attr('transform', 'translate(0,0) scale(1)')
+      .on('end', () => {
+        svg.selectAll('[data-ab]').transition().duration(dur(320)).style('opacity', 1).style('pointer-events', null);
+        gLabels.selectAll('.num, .leader').transition().delay(dur(120)).duration(dur(300)).style('opacity', 1);
+        k = 1; tx = 0; ty = 0; kRel = 1;
+        buildDetail(false); svg.call(zoomC); svg.call(zoomC.transform, d3.zoomIdentity);
+      });
+    layers.edgeD.transition().duration(dur(640)).attr('transform', 'translate(1,1.4)');
+    layers.edgeL.transition().duration(dur(640)).attr('transform', 'translate(-.6,-.8)');
+    statePaths.classed('active', false); layers.borders.selectAll('path').classed('active', false);
+    level = 'country'; open = null; scope = null; document.body.dataset.level = 'country';
+    svg.attr('viewBox', `0 0 ${W} ${H}`); d3.select('#tex').attr('patternTransform', null);
+    setCopy(); renderUnder();
+  }
+
+  function setCopy() {
+    const h1 = document.getElementById('h1'), p1 = document.getElementById('p1');
+    if (!open) {
+      h1.textContent = 'Where things need collecting from.';
+      p1.textContent = `Each number is an open request leaving that state. Open a state, then press a city to see what leaves and arrives there.${signedIn ? '' : ' Log in to see prices and who is driving.'}`;
+      return;
+    }
+    const ab = open.properties.abbr, n = requestsOf(ab).length, m = tripsOf(ab).length;
+    h1.textContent = open.properties.name;
+    p1.textContent = `${n} open ${n === 1 ? 'request' : 'requests'} leaving ${open.properties.name}, ${m} driver ${m === 1 ? 'trip' : 'trips'} touching it. Press a city to see its deliveries.` +
+      (signedIn ? '' : ' Log in to see prices and who is driving.');
+  }
+
+  // ---------- routes and cities at either level ----------
+  const gRoutes = d3.select('#routes'), gConts = d3.select('#conts'), gCities = d3.select('#cities');
+  const norm = v => { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; };
+  const line = d3.line().curve(d3.curveCatmullRom.alpha(0.5));
+
+  function routeGeometry(item, f) {
+    // sample the geodesic; inside a state, find where it crosses the border
+    const interp = d3.geoInterpolate([item.from.lng, item.from.lat], [item.to.lng, item.to.lat]);
+    const N = 90, pts = [];
+    for (let i = 0; i <= N; i++) { const p = interp(i / N); pts.push({ ll: p, xy: projection(p), inside: f ? d3.geoContains(f, p) : true }); }
+    const first = pts[0].inside, last = pts[N].inside;
+    let solid, dotsFrom = null, dir = null;
+    if (first && last) solid = pts;
+    else if (first) {                       // leaves the state: exit at the last land sample, so inlets and lakes on the way do not cut it short
+      const j = pts.map(p => p.inside).lastIndexOf(true); solid = pts.slice(0, Math.min(N, j + 1) + 1);
+      const a = solid[solid.length - 2].xy, b = solid[solid.length - 1].xy; dotsFrom = b; dir = norm([b[0] - a[0], b[1] - a[1]]);
+    } else if (last) {                      // arrives into the state
+      const j = pts.findIndex(p => p.inside); solid = pts.slice(Math.max(j - 1, 0));
+      const a = solid[1].xy, b = solid[0].xy; dotsFrom = b; dir = norm([b[0] - a[0], b[1] - a[1]]);
+    } else return null;
+    return { solid: solid.filter(p => p.xy).map(p => p.xy), dotsFrom, dir };
+  }
+
+  function buildDetail(instant) {
+    gRoutes.selectAll('*').remove(); gConts.selectAll('*').remove(); gCities.selectAll('*').remove();
+    bundles = []; city = null;
+    const ab = scope;
+    // every place in scope is drawn; relayout decides which get a dot and a name at this zoom
+    const cities = ab ? cityList.filter(c => c.state === ab) : cityList;
+    cityEls = cities.map(c => {
+      const g = gCities.append('g').attr('class', 'cityg' + (c.lit ? ' lit' : '') + (ab ? ' hot' : '')).attr('transform', `translate(${c.xy[0]},${c.xy[1]})`);
+      const hit = g.append('circle').attr('class', 'chit');
+      const circ = g.append('circle').attr('class', 'city' + (c.lit ? '' : ' quiet'));
+      const txt = g.append('text').attr('class', 'clab' + (c.lit ? '' : ' quiet'));
+      txt.append('tspan').text(c.name);
+      // inside a state the count is part of the button: what leaves and arrives here
+      if (ab && c.n) txt.append('tspan').attr('class', 'ct').text(c.n);
+      if (ab) g.on('click', ev => { ev.stopPropagation(); selectCity(c); });
+      return { c, g: g.node(), hit: hit.node(), circ: circ.node(), txt: txt.node(), ct: txt.select('tspan.ct').node() };
+    });
+    relayout(true);
+    if (!instant && ab) cityEls.forEach((e, i) => { d3.select(e.g).style('opacity', 0).transition().delay(dur(60 + Math.min(i, 12) * 40)).duration(dur(360)).style('opacity', 1); });
+  }
+
+  // ---------- a pressed city: its connections, one line per destination ----------
+  function selectCity(c) {
+    if (city === c) return;
+    city = c; closeBar();
+    drawBundles(false);
+    cityEls.forEach(e => { e.g.classList.toggle('sel', e.c === c); e.g.classList.toggle('faint', c.n > 0 && e.c !== c && !isConnected(e.c)); });
+    renderUnder();
+    relayout();
+  }
+  function clearCity() {
+    if (!city) return;
+    city = null; bundles = []; closeBar();
+    cityEls.forEach(e => { e.g.classList.remove('sel', 'faint'); });
+    gRoutes.selectAll('*').interrupt().transition().duration(dur(180)).style('opacity', 0).remove();
+    gConts.selectAll('*').interrupt().transition().duration(dur(180)).style('opacity', 0).remove();
+    renderUnder(); relayout();
+  }
+  const isConnected = other => city && bundles.some(b => b.otherKey === cityKey(other.state, other.name));
+
+  function drawBundles(instant) {
+    gRoutes.selectAll('*').remove(); gConts.selectAll('*').remove();
+    bundles = [];
+    if (!city) return;
+    const me = cityKey(city.state, city.name);
+    const groups = {};
+    [...city.leaving, ...city.arriving, ...city.trips].forEach(i => {
+      const other = endKey(i.from) === me ? i.to : i.from;
+      const key = i.kind + '|' + endKey(other);
+      (groups[key] = groups[key] || { kind: i.kind, other, otherKey: endKey(other), items: [] }).items.push(i);
+    });
+    // requests and trips on the same pair sit side by side
+    const pairs = {}; Object.values(groups).forEach(b => { (pairs[b.otherKey] = pairs[b.otherKey] || []).push(b); });
+    Object.values(groups).sort((a, b) => b.items.length - a.items.length).forEach((b, i) => {
+      const g = routeGeometry({ from: { lng: city.lng, lat: city.lat }, to: { lng: b.other.lng, lat: b.other.lat } }, open);
+      if (!g) return;
+      b.id = 'b' + i; b.geom = g;
+      const grp = pairs[b.otherKey]; b.offset = (grp.indexOf(b) - (grp.length - 1) / 2) * 3.2;
+      const d = line(g.solid);
+      b.path = gRoutes.append('path').attr('class', 'route' + (b.kind === 'trip' ? ' trip' : '')).attr('d', d).attr('data-b', b.id);
+      b.hit = gRoutes.append('path').attr('class', 'hit').attr('d', d).attr('data-b', b.id).on('click', ev => { ev.stopPropagation(); selectBundle(b); });
+      b.dots = [];
+      if (g.dotsFrom) for (let n = 1; n <= 3; n++) b.dots.push(gConts.append('circle').attr('class', 'cont').attr('data-b', b.id).attr('data-n', n));
+      // how many share this line
+      b.count = b.items.length > 1 ? gConts.append('text').attr('class', 'bcount').attr('data-b', b.id).text('×' + b.items.length) : null;
+      bundles.push(b);
+    });
+    relayout(true);
+    if (instant) return;
+    bundles.forEach((b, i) => {
+      const L = b.path.node().getTotalLength();
+      b.path.attr('stroke-dasharray', `${L} ${L}`).attr('stroke-dashoffset', L)
+        .transition().delay(dur(i * 45)).duration(dur(420)).ease(d3.easeCubicOut).attr('stroke-dashoffset', 0)
+        .on('end', function () { d3.select(this).attr('stroke-dasharray', null).attr('stroke-dashoffset', null); relayout(); });
+      b.dots.forEach((c, n) => c.style('opacity', 0).transition().delay(dur(i * 45 + 380 + n * 60)).duration(dur(200)).style('opacity', null));
+      if (b.count) b.count.style('opacity', 0).transition().delay(dur(i * 45 + 300)).duration(dur(240)).style('opacity', null);
+    });
+  }
+
+  const overlaps = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+
+  // sizes in screen pixels and what is visible at this zoom; re-run on every pinch
+  function relayout() {
+    const fr = frame(), pu = 1 / fr.s, u = pu / k;
+    const blockers = level === 'country' ? layoutNumbers() : [];
+
+    // towns: bigger places first, lit ones ahead of them; a name appears only where it has room
+    const fontPx = 12.5, labelMin = 900000 / (k * k), dotMin = 300000 / (k * k);
+    const placed = blockers;
+    cityEls.forEach(e => {
+      const c = e.c;
+      const sx = fr.ox + (tx + k * c.xy[0]) * fr.s, sy = fr.oy + (ty + k * c.xy[1]) * fr.s;
+      const onScreen = sx > -40 && sx < fr.w + 40 && sy > -20 && sy < fr.h + 20;
+      let label = false, side = 1;
+      if (onScreen && (c === city || c.pop >= (c.lit ? labelMin / 6 : labelMin))) {
+        const w = fontPx * 0.56 * (c.name.length + (e.ct ? String(c.n).length + 1.4 : 0)) + 6;
+        const right = [sx + 4, sy - 8, sx + 8 + w, sy + 8], left = [sx - 8 - w, sy - 8, sx - 4, sy + 8];
+        if (!placed.some(q => overlaps(q, right))) { placed.push(right); label = true; }
+        else if (!placed.some(q => overlaps(q, left))) { placed.push(left); label = true; side = -1; }
+      }
+      const dot = onScreen && (c.lit || label || c.pop >= dotMin);
+      e.g.style.display = dot ? '' : 'none';
+      if (!dot) return;
+      e.circ.setAttribute('r', (c.lit ? 3.4 : 2.3) * u);
+      e.hit.setAttribute('r', 14 * u);
+      e.txt.style.display = label ? '' : 'none';
+      if (label) {
+        e.txt.setAttribute('x', side * 7 * u); e.txt.setAttribute('text-anchor', side > 0 ? 'start' : 'end');
+        e.txt.setAttribute('y', 4 * u); e.txt.setAttribute('font-size', fontPx * u); e.txt.setAttribute('stroke-width', 2.2 * u);
+        if (e.ct) e.ct.setAttribute('dx', 5 * u);
+      }
+    });
+
+    // the pressed city's lines
+    bundles.forEach(b => {
+      if (b.kind === 'trip') b.path.attr('stroke-dasharray', `${3.2 * u} ${3.2 * u}`);
+      const pts = b.geom.solid, a = pts[0], z = pts[pts.length - 1];
+      const nrm = norm([-(z[1] - a[1]), z[0] - a[0]]), off = b.offset * u;
+      if (off !== 0 || b.offsetApplied) {
+        const d = line(pts.map(q => [q[0] + nrm[0] * off, q[1] + nrm[1] * off]));
+        b.path.attr('d', d); b.hit.attr('d', d); b.offsetApplied = true;
+      }
+      if (b.geom.dotsFrom) b.dots.forEach((c, n) => c.attr('r', 1.4 * u)
+        .attr('cx', b.geom.dotsFrom[0] + nrm[0] * off + b.geom.dir[0] * (7 + 8 * (n + 1)) * u).attr('cy', b.geom.dotsFrom[1] + nrm[1] * off + b.geom.dir[1] * (7 + 8 * (n + 1)) * u));
+      if (b.count) {
+        const m = pts[Math.floor(pts.length / 2)];
+        b.count.attr('x', m[0] + nrm[0] * (off + 10 * u)).attr('y', m[1] + nrm[1] * (off + 10 * u)).attr('font-size', 11.5 * u).attr('stroke-width', 2.4 * u);
+      }
+    });
+
+    const hint = document.getElementById('zoomHint');
+    const how = isPhone() ? 'Pinch' : 'Pinch or Ctrl+scroll';
+    if (level === 'country') hint.innerHTML = `${how} for more towns. Open a state to press its cities.`;
+    else if (city) hint.innerHTML = `<b>${city.name}</b>: ${bundles.length} ${bundles.length === 1 ? 'connection' : 'connections'} drawn. Press the state or Esc to clear.`;
+    else { const n = cityEls.filter(e => e.c.n).length; hint.innerHTML = n ? `<b>${n} ${n === 1 ? 'city has' : 'cities have'} deliveries.</b> Press one to see what leaves and arrives there. ${how} for more towns.` : `Nothing leaves or arrives here yet. ${how} for more towns.`; }
+  }
+  addEventListener('resize', () => relayout());
+
+  // ---------- the bar and the list ----------
+  const bar = document.getElementById('bar'), list = document.getElementById('list');
+  const arrow = '<span class="arw" aria-hidden="true">&#8594;</span>';
+  const fmtClock = mins => { const s = Math.max(0, Math.round(mins * 60)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; const pad = n => n < 10 ? '0' + n : n; return h ? `${h}:${pad(m)}:${pad(x)}` : `${m}:${pad(x)}`; };
+  const startedAt = Date.now();
+  const minsLeft = item => item.closesInMin == null ? null : item.closesInMin - (Date.now() - startedAt) / 60000;
+
+  function highlight(b) {
+    d3.selectAll('.route, .cont, .bcount').classed('dim', true).classed('sel', false);
+    if (!b) return;
+    d3.selectAll(`[data-b="${b.id}"]`).classed('dim', false);
+    b.path.classed('sel', true);
+  }
+  const bundleOf = item => bundles.find(b => b.items.includes(item));
+  function showBar(head, kind, meta, price) {
+    bar.innerHTML = `<div class="r">${head}<small>${kind}</small></div><div class="meta">${meta}</div>${price || ''}<button class="x" type="button" aria-label="Close">Close</button>`;
+    bar.classList.add('on');
+    bar.querySelector('.x').onclick = closeBar;
+  }
+  function selectItem(item) {
+    selected = item;
+    highlight(bundleOf(item));
+    document.querySelectorAll('.row').forEach(r => r.classList.toggle('sel', r.dataset.id === item.id));
+    const same = item.fromSt === item.toSt;
+    const head = `${item.from.city}${same ? '' : ', ' + item.fromSt}${arrow}${item.to.city}${same ? '' : ', ' + item.toSt}`;
+    const kind = item.kind === 'trip' ? 'Driver trip' : (item.mode === 'auction' ? 'Auction' : 'Fixed price');
+    if (!signedIn) { showBar(head, kind, `<b>Log in to see the details</b>${item.kind === 'trip' ? 'Who is driving and when they leave' : 'The item, the price and who is bidding'} are visible to members.`); return; }
+    if (item.kind === 'trip') { showBar(head, kind, `<b>${item.driver}, ${item.vehicle}</b>Departs in ${item.departs}. ${same ? 'Stays inside ' + item.fromSt + '.' : 'Crosses into ' + item.toSt + '.'}`); return; }
+    showBar(head, kind, `<b>${item.item}</b>${item.weightKg ? item.weightKg + ' kg. ' : ''}${same ? 'Stays inside ' + item.fromSt : 'Ends in ' + item.to.city + ', ' + item.toSt}`,
+      `<div class="price tnum">$${item.price}<small>${item.mode === 'auction' ? '<span class="live" data-clock>' + fmtClock(minsLeft(item)) + '</span> left' : 'No bidding'}</small></div>`);
+  }
+  // a whole line: everything between the pressed city and one destination
+  function selectBundle(b) {
+    selected = null; highlight(b);
+    document.querySelectorAll('.row').forEach(r => r.classList.toggle('sel', r.dataset.b === b.id));
+    const n = b.items.length, same = b.other.state === city.state;
+    const head = `${city.name}${arrow}${b.other.city}${same ? '' : ', ' + b.other.state}`;
+    if (b.kind === 'trip') {
+      const meta = signedIn ? `<b>${b.items.map(t => t.driver).join(', ')}</b>${n === 1 ? 'Departs in ' + b.items[0].departs : n + ' drivers going this way'}` : `<b>Log in to see who is driving</b>${n} ${n === 1 ? 'driver is' : 'drivers are'} going this way.`;
+      showBar(head, n === 1 ? 'Driver trip' : n + ' driver trips', meta); return;
+    }
+    const out = b.items.filter(i => endKey(i.from) === cityKey(city.state, city.name)).length, inn = n - out;
+    const dir = [out ? `${out} leaving` : '', inn ? `${inn} arriving` : ''].filter(Boolean).join(', ');
+    if (!signedIn) { showBar(head, n === 1 ? 'Request' : n + ' requests', `<b>Log in to see the items and prices</b>${dir}.`); return; }
+    const prices = b.items.map(i => i.price), lo = Math.min(...prices), hi = Math.max(...prices);
+    showBar(head, n === 1 ? 'Request' : n + ' requests', `<b>${dir}</b>${b.items.slice(0, 3).map(i => i.item).join(', ')}${n > 3 ? ', and ' + (n - 3) + ' more' : ''}`,
+      `<div class="price tnum">${lo === hi ? '$' + lo : '$' + lo + ' to $' + hi}<small>${b.items.filter(i => i.mode === 'auction').length} in auction</small></div>`);
+  }
+  function closeBar() {
+    selected = null; bar.classList.remove('on'); bar.innerHTML = '';
+    d3.selectAll('.route, .cont, .bcount').classed('dim', false).classed('sel', false);
+    document.querySelectorAll('.row').forEach(r => r.classList.remove('sel'));
+  }
+
+  const rowFor = r => {
+    const same = r.fromSt === r.toSt;
+    const cl = r.mode === 'auction' ? `<div class="cl live tnum"><span data-clock data-id="${r.id}">${fmtClock(minsLeft(r))}</span><small>AUCTION</small></div>` : `<div class="cl">Fixed<small>NO BIDDING</small></div>`;
+    return `<button class="row" data-id="${r.id}" type="button"><div class="rt">${r.from.city}${arrow}${r.to.city}${same ? '' : '<span class="st">' + r.toSt + '</span>'}</div><div class="it">${r.item}</div><div class="pr tnum">$${r.price}</div>${cl}</button>`;
+  };
+  const gateHtml = (lead, rest) => `<div class="gate"><p><b>${lead}</b> ${rest}</p><div style="display:flex;gap:10px"><a href="/login" class="btn ghost">Log in</a><a href="/signup" class="btn">Sign up</a></div></div>`;
+  const wire = () => {
+    list.querySelectorAll('.row[data-id]').forEach(row => row.onclick = () => selectItem(all.find(i => i.id === row.dataset.id)));
+    list.querySelectorAll('.row[data-b]').forEach(row => row.onclick = () => selectBundle(bundles.find(b => b.id === row.dataset.b)));
+    const back = list.querySelector('[data-back]'); if (back) back.onclick = clearCity;
+  };
+
+  function renderUnder() {
+    if (!open) {
+      const n = D.requests.length;
+      list.innerHTML = signedIn
+        ? `<div class="lhead"><h2>Open requests across the country</h2><span>${n} open, leaving ${activeStates} states</span></div><p class="empty">Open a state, then press a city to see what leaves and arrives there.</p>`
+        : gateHtml(`${n} open requests are leaving ${activeStates} states.`, 'Log in to see prices, items and who is driving that way.');
+      return;
+    }
+    const f = open, ab = f.properties.abbr, reqs = requestsOf(ab);
+
+    if (city) {
+      const c = city, me = cityKey(c.state, c.name);
+      const head = `<div class="lhead"><h2>${c.name}</h2><span>${c.n} ${c.n === 1 ? 'request' : 'requests'}, ${c.trips.length} driver ${c.trips.length === 1 ? 'trip' : 'trips'} <button class="x" type="button" data-back>All of ${f.properties.name}</button></span></div>`;
+      if (!c.n && !c.trips.length) { list.innerHTML = head + `<p class="empty">Nothing leaves or arrives in ${c.name} yet.</p>`; wire(); return; }
+      const sub = t => `<div class="lsub">${t}</div>`;
+      let html = head;
+      if (signedIn) {
+        if (c.leaving.length) html += sub('Leaving') + c.leaving.map(rowFor).join('');
+        if (c.arriving.length) html += sub('Arriving') + c.arriving.map(rowFor).join('');
+        if (c.trips.length) html += sub('Drivers passing through') + c.trips.map(t => { const same = t.fromSt === t.toSt; return `<button class="row" data-id="${t.id}" type="button"><div class="rt">${t.from.city}${arrow}${t.to.city}${same ? '' : '<span class="st">' + t.toSt + '</span>'}</div><div class="it">${t.driver}, ${t.vehicle}</div><div class="pr"></div><div class="cl">${t.departs}<small>DEPARTS IN</small></div></button>`; }).join('');
+      } else {
+        // visitors see where things go and how many, not what they are or what they pay
+        const isOut = i => endKey(i.from) === me;
+        const brow = (b, out) => { const n = b.items.filter(i => isOut(i) === out).length; const same = b.other.state === c.state; const au = b.items.filter(i => isOut(i) === out && i.mode === 'auction').length;
+          return `<button class="row" data-b="${b.id}" type="button"><div class="rt">${out ? c.name + arrow + b.other.city : b.other.city + arrow + c.name}${same ? '' : '<span class="st">' + b.other.state + '</span>'}</div><div class="it">${au ? au + ' in auction' : 'Fixed price'}</div><div class="pr tnum">×${n}</div><div class="cl"><small>LOG IN FOR PRICES</small></div></button>`; };
+        const outB = bundles.filter(b => b.kind === 'request' && b.items.some(isOut)), inB = bundles.filter(b => b.kind === 'request' && b.items.some(i => !isOut(i)));
+        if (outB.length) html += sub('Leaving') + outB.map(b => brow(b, true)).join('');
+        if (inB.length) html += sub('Arriving') + inB.map(b => brow(b, false)).join('');
+        if (c.trips.length) html += sub('Drivers passing through') + `<p class="empty">${c.trips.length} driver ${c.trips.length === 1 ? 'trip touches' : 'trips touch'} ${c.name}. Log in to see who and when.</p>`;
+        html += gateHtml('Prices, items and drivers are visible to members.', 'Log in to bid or to book one of these.');
+      }
+      list.innerHTML = html; wire(); return;
+    }
+
+    if (!signedIn) { list.innerHTML = gateHtml(`${reqs.length} open ${reqs.length === 1 ? 'request is' : 'requests are'} leaving ${f.properties.name}.`, 'Press a city on the map to see where things go from there. Log in to see prices and who is driving.'); return; }
+    if (!reqs.length) { list.innerHTML = `<div class="lhead"><h2>Requests leaving ${f.properties.name}</h2></div><p class="empty">Nothing open right now. Drivers' trips still show when you press a city.</p>`; return; }
+    list.innerHTML = `<div class="lhead"><h2>Requests leaving ${f.properties.name}</h2><span>${reqs.length} open. Press a city on the map to narrow this down.</span></div>` + reqs.map(rowFor).join('');
+    wire();
+  }
+
+  // live clocks
+  setInterval(() => {
+    document.querySelectorAll('[data-clock]').forEach(el => {
+      const id = el.dataset.id || (selected && selected.id); const item = D.requests.find(r => r.id === id) || selected;
+      if (item && item.closesInMin != null) el.textContent = fmtClock(minsLeft(item));
+    });
+  }, 1000);
+
+  // ---------- phone: ranked state list ----------
+  const ms = document.getElementById('mobileStates');
+  const ranked = feats.map(f => ({ f, n: counts[f.properties.abbr] || 0 })).sort((a, b) => b.n - a.n || a.f.properties.name.localeCompare(b.f.properties.name));
+  ms.innerHTML = ranked.map(({ f, n }) => `<button type="button" data-ab="${f.properties.abbr}"><span class="ab">${f.properties.abbr}</span><span class="nm">${f.properties.name}</span><span class="ct tnum${n ? '' : ' zero'}">${n || ''}</span></button>`).join('');
+  ms.querySelectorAll('button').forEach(b => b.onclick = () => openState(byAbbr[b.dataset.ab]));
+
+  // ---------- first paint ----------
+  setCopy(); renderUnder();
+  buildDetail(false);
+  svg.call(zoomC);
+})();
+</script>
+</body>
+</html>

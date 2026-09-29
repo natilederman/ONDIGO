@@ -10,7 +10,7 @@ export function LegalDeclaration({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex items-start gap-3 rounded-lg border border-line bg-line/20 p-4 text-sm">
+    <label className="flex items-start gap-3 border border-line bg-line/20 p-4 text-sm">
       <input
         type="checkbox"
         checked={checked}

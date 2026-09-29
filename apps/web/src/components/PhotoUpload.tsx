@@ -48,9 +48,9 @@ export function PhotoUpload({
       <p className="text-sm font-medium capitalize">{kind} photo</p>
       {previewUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={previewUrl} alt={`${kind} verification`} className="h-40 w-full rounded-lg object-cover" />
+        <img src={previewUrl} alt={`${kind} verification`} className="h-40 w-full object-cover" />
       ) : (
-        <div className="flex h-40 w-full items-center justify-center rounded-lg border border-dashed border-line text-sm text-muted">
+        <div className="flex h-40 w-full items-center justify-center border border-dashed border-line text-sm text-muted">
           No photo yet
         </div>
       )}

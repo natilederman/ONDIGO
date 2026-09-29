@@ -6,6 +6,20 @@ Supabase backend they both talk to.
 
 > Forked from the original ONDIGO v1 project as a starting point for the next iteration.
 
+## Web stack
+
+The web app runs Next 15 on React 19.1.0, the same React the Expo app uses, so the workspace hoists a single copy. Root `package.json` pins that with `overrides`; do not add a second React version to either app. Dynamic pages read `params` with React's `use()`, as Next 15 requires. `npm run build:web` passes.
+
+## Homepage map
+
+The homepage is a map of the United States with the number of open requests leaving each state. Open a state, press a city, and the list underneath shows what leaves and arrives there.
+
+- Geography is static: `apps/web/public/map/us-states.json` (us-atlas, Census) and `us-cities.json` (Natural Earth populated places, public domain).
+- Activity comes from Supabase. Members read `delivery_requests` and `trips` directly (RLS). Visitors get `map_public_activity()`, a security-definer RPC (migration 9) that returns only rounded coordinates, pricing mode and clocks: no addresses, prices or people.
+- The drawing is d3 in `apps/web/src/lib/map/engine.ts`; the React shell is `apps/web/src/components/map/DeparturesMap.tsx`; styles in `apps/web/src/app/map.css`.
+- `design/prototype/` is the standalone prototype the design was approved on, with sample data. Open `index.html` from any static server; it is not part of the app.
+- `supabase/seed_map_demo.sql` adds 30 demo requests and 6 trips around a few hubs so the map has something to show. Run it after `seed.sql`.
+
 ## Stack
 
 - **Backend**: [Supabase](https://supabase.com) (Postgres + Auth + Realtime + Storage), running
@@ -24,19 +38,43 @@ Supabase backend they both talk to.
 ## Prerequisites
 
 - Node.js 20+
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) running (for local Supabase)
 - For the mobile app: Expo Go on your phone, or Xcode/Android Studio for a simulator
+
+Docker is **not** required. The backend runs on a hosted Supabase project (see below).
 
 ## Setup
 
 ```bash
 npm install
-npm run db:start      # starts local Supabase (Postgres, Auth, Realtime, Storage, Studio)
+npm run dev:web       # that's it
 ```
 
-`db:start` prints an `API_URL` and `ANON_KEY`. The web app's `.env.local` and the mobile app's
-`.env` already point at the default local values (`http://127.0.0.1:54321` and the default demo
-anon key) — only update them if you switch to a hosted Supabase project later.
+### Where the backend lives
+
+The apps point at a hosted Supabase project: **`ondigo`**, ref `sbbcufpmnhcljkimelpy`,
+region `eu-central-1` (Frankfurt), free tier. `apps/web/.env.local` and `apps/mobile/.env`
+already carry its URL and anon key. Because it is on the public internet, a phone on any
+network reaches it directly; no tunnels.
+
+Schema and demo data were applied to it on 2026-09-28 as a single baseline covering local
+migrations `00000000000001` through `00000000000007`. If you later want to manage it with
+the Supabase CLI, link once and mark those seven as already applied:
+
+```bash
+npx supabase link --project-ref sbbcufpmnhcljkimelpy
+npx supabase migration repair --status applied 00000000000001 00000000000002 00000000000003 00000000000004 00000000000005 00000000000006 00000000000007
+```
+
+### Optional: fully local backend with Docker
+
+The original local setup still works if you want to develop offline:
+
+```bash
+npm run db:start      # local Supabase in Docker (Postgres, Auth, Realtime, Storage, Studio)
+```
+
+Then swap the two commented-out local lines back in inside `apps/web/.env.local` (and the
+equivalent in `apps/mobile/.env`). Local Studio is at http://127.0.0.1:54323.
 
 Demo accounts (seeded automatically), all with password `ondigo123`:
 

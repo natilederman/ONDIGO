@@ -12,10 +12,16 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local --schema public > packages/shared/src/database.types.ts"
+    "db:types": "supabase gen types typescript --local --schema public > packages/shared/src/database.types.ts",
+    "build:web": "npm run build --workspace apps/web"
   },
   "devDependencies": {
     "supabase": "^2.115.0",
     "typescript": "^5.5.4"
+  },
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "scheduler": "0.26.0"
   }
 }

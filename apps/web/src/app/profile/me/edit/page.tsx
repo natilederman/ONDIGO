@@ -113,7 +113,7 @@ export default function EditProfilePage() {
               </option>
             ))}
           </Select>
-          {error && <p className="text-sm text-accent-dark">{error}</p>}
+          {error && <p className="text-sm text-signal">{error}</p>}
           <Button type="submit" loading={loading} className="w-full">
             Save
           </Button>
