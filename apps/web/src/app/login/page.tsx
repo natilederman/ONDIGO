@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signInSchema } from '@ondigo/shared';
@@ -9,8 +9,13 @@ import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const router = useRouter();
+
+  // the email confirmation link lands here with a fresh session; carry on to the map
+  useEffect(() => {
+    if (user) router.replace('/');
+  }, [user, router]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);

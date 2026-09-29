@@ -11,7 +11,8 @@ interface AuthState {
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string, vehicleType?: VehicleType) => Promise<void>;
+  /** Resolves to true when the account still has to be confirmed from the email link. */
+  signUp: (email: string, password: string, fullName: string, vehicleType?: VehicleType) => Promise<boolean>;
   signOut: () => Promise<void>;
 }
 
@@ -57,12 +58,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, fullName: string, vehicleType?: VehicleType) => {
-    const { error } = await client.auth.signUp({
+    const { data, error } = await client.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, vehicle_type: vehicleType } },
+      options: {
+        data: { full_name: fullName, vehicle_type: vehicleType },
+        // the confirmation link returns to whichever site the person signed up on,
+        // rather than to the project's single Site URL
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
     });
     if (error) throw error;
+    return !data.session;
   };
 
   const signOut = async () => {

@@ -17,6 +17,7 @@ export default function SignupPage() {
   const [vehicleType, setVehicleType] = useState<VehicleType | ''>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,14 +34,32 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
     try {
-      await signUp(email, password, fullName, vehicleType || undefined);
-      router.push('/requests');
+      const needsConfirmation = await signUp(email, password, fullName, vehicleType || undefined);
+      if (needsConfirmation) setSentTo(email);
+      else router.push('/requests');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not sign up');
     } finally {
       setLoading(false);
     }
   };
+
+  if (sentTo) {
+    return (
+      <div className="mx-auto max-w-[380px] py-6">
+        <h1 className="text-[clamp(1.5rem,2.4vw,1.95rem)] font-semibold leading-[1.1] tracking-display">
+          Check your email
+        </h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-muted">
+          We sent a confirmation link to <b className="font-semibold text-ink">{sentTo}</b>. Open it and you will
+          land back on ONDIGO, signed in and ready to post or drive.
+        </p>
+        <p className="mt-6 border-t border-line pt-5 text-[13px] leading-relaxed text-steel">
+          Nothing arrived after a few minutes? Check spam, or go back and sign up again with the right address.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[380px] py-6">
