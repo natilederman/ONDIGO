@@ -8,6 +8,7 @@ import { useRequireAuth } from '@/lib/useRequireAuth';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { PageHeader, TableHead, Notice } from '@/components/Page';
 import { Route } from '@/components/Route';
+import { PlaceFilter, placeMatches, usePlaceEnds, usePlaceFilter } from '@/components/PlaceFilter';
 
 const COLS = 'md:grid-cols-[1.55fr_1fr_108px_128px]';
 
@@ -16,6 +17,9 @@ export default function RequestsPage() {
   const client = getSupabaseClient();
   const [requests, setRequests] = useState<DeliveryRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const { ends, names, ready } = usePlaceEnds(requests, (r) => [r.pickup_lat, r.pickup_lng, r.dropoff_lat, r.dropoff_lng], (r) => r.id);
+  const [filter, setFilter] = usePlaceFilter();
+  const shown = requests.filter((r) => placeMatches(ends[r.id], filter));
 
   useEffect(() => {
     requestQueries.listOpenRequests(client).then((r) => {
@@ -54,9 +58,17 @@ export default function RequestsPage() {
         </Notice>
       ) : (
         <>
+          <PlaceFilter ends={ends} names={names} ready={ready} value={filter} onChange={setFilter} total={requests.length} shown={shown.length} noun={['open request', 'open requests']} dirLabels={{ from: 'Pickup here', to: 'Drop-off here' }} />
+          {shown.length === 0 ? (
+            <Notice>
+              Nothing matches this place yet.{' '}
+              <button type="button" onClick={() => setFilter({ state: null, city: null, dir: 'any' })} className="font-medium text-ink underline">Show everything</button>
+            </Notice>
+          ) : (
+          <>
           <TableHead cols={['Route', 'Item', 'Price', 'Closes']} className={COLS} />
           <div>
-            {requests.map((r) => {
+            {shown.map((r) => {
               const auction = r.pricing_mode === 'auction';
               const price = auction ? r.current_price : r.fixed_price;
               return (
@@ -96,9 +108,8 @@ export default function RequestsPage() {
               );
             })}
           </div>
-          <div className="px-1 pt-4 text-[13px] text-steel">
-            {requests.length} open {requests.length === 1 ? 'request' : 'requests'}
-          </div>
+          </>
+          )}
         </>
       )}
     </div>

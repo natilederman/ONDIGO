@@ -8,6 +8,7 @@ import { useRequireAuth } from '@/lib/useRequireAuth';
 import { DriverBadge } from '@/components/DriverBadge';
 import { PageHeader, TableHead, Notice } from '@/components/Page';
 import { Route } from '@/components/Route';
+import { PlaceFilter, placeMatches, usePlaceEnds, usePlaceFilter } from '@/components/PlaceFilter';
 
 const COLS = 'md:grid-cols-[1.55fr_1fr_120px_132px]';
 
@@ -16,6 +17,9 @@ export default function TripsPage() {
   const client = getSupabaseClient();
   const [trips, setTrips] = useState<TripWithDriver[]>([]);
   const [loading, setLoading] = useState(true);
+  const { ends, names, ready } = usePlaceEnds(trips, (t) => [t.origin_lat, t.origin_lng, t.destination_lat, t.destination_lng], (t) => t.id);
+  const [filter, setFilter] = usePlaceFilter();
+  const shown = trips.filter((t) => placeMatches(ends[t.id], filter));
 
   useEffect(() => {
     tripQueries.listOpenTrips(client).then((t) => {
@@ -54,9 +58,17 @@ export default function TripsPage() {
         </Notice>
       ) : (
         <>
+          <PlaceFilter ends={ends} names={names} ready={ready} value={filter} onChange={setFilter} total={trips.length} shown={shown.length} noun={['trip', 'trips']} dirLabels={{ from: 'Starting here', to: 'Ending here' }} />
+          {shown.length === 0 ? (
+            <Notice>
+              No trips through this place yet.{' '}
+              <button type="button" onClick={() => setFilter({ state: null, city: null, dir: 'any' })} className="font-medium text-ink underline">Show everything</button>
+            </Notice>
+          ) : (
+          <>
           <TableHead cols={['Route', 'Driver', 'Capacity', 'Departs']} className={COLS} />
           <div>
-            {trips.map((t) => (
+            {shown.map((t) => (
               <Link
                 key={t.id}
                 href={`/trips/${t.id}`}
@@ -85,9 +97,9 @@ export default function TripsPage() {
                       <p className="mt-1 line-clamp-1 text-[13px] text-steel">{t.notes}</p>
                     )}
                   </div>
-                  <div className="tnum shrink-0 text-right text-[13px] text-muted md:order-3">
+                  <div className="tnum min-w-0 max-w-[45%] shrink-0 text-right text-[13px] text-muted md:order-3 md:max-w-none">
                     {t.capacity_weight_kg}kg
-                    <span className="mt-0.5 block text-[11px] uppercase tracking-[0.1em] text-steel">
+                    <span className="mt-0.5 block break-words text-[11px] uppercase tracking-[0.1em] text-steel">
                       {t.capacity_size}
                     </span>
                   </div>
@@ -95,9 +107,8 @@ export default function TripsPage() {
               </Link>
             ))}
           </div>
-          <div className="px-1 pt-4 text-[13px] text-steel">
-            {trips.length} {trips.length === 1 ? 'trip' : 'trips'} posted
-          </div>
+          </>
+          )}
         </>
       )}
     </div>

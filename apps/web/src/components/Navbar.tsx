@@ -63,8 +63,12 @@ export function Navbar() {
             ONDIGO
           </Link>
           {/* the whole site is a demonstration; say so where every page can see it */}
-          <span className="ml-1 whitespace-nowrap border border-signal/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-signal sm:ml-2">
-            Demo, not a working service
+          <span
+            title="Demo, not a working service"
+            className="ml-1 whitespace-nowrap border border-signal/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-signal sm:ml-2"
+          >
+            <span className="sm:hidden">Demo</span>
+            <span className="hidden sm:inline">Demo, not a working service</span>
           </span>
         </div>
 
@@ -94,7 +98,8 @@ export function Navbar() {
               <Link href={`/profile/${user.id}`} className="hidden text-[13.5px] font-medium hover:underline sm:inline">
                 {profile?.full_name ?? 'Profile'}
               </Link>
-              <button onClick={doSignOut} className="text-[13.5px] text-muted transition-colors duration-150 hover:text-ink">
+              {/* on phones Sign out lives in the menu, where there is room for it */}
+              <button onClick={doSignOut} className="hidden text-[13.5px] text-muted transition-colors duration-150 hover:text-ink sm:inline">
                 Sign out
               </button>
             </>
