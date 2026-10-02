@@ -697,7 +697,6 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
       }
     });
     bundles.forEach((b) => {
-      if (b.kind === 'trip') b.path.attr('stroke-dasharray', `${3.2 * u} ${3.2 * u}`);
       const pts = b.geom.solid;
       const a = pts[0],
         z = pts[pts.length - 1];

@@ -4,7 +4,7 @@
 .dm-stage { position: relative; border-top: 1px solid var(--ink); padding-top: 14px; }
 .dm-stage-inner { height: min(calc(100vh - 300px), 740px); min-height: 380px; }
 /* a state fills what is left of the screen under the header and the one-line title */
-[data-level="state"] .dm-stage-inner { height: max(360px, calc(100svh - 185px)); min-height: 0; }
+[data-level="state"] .dm-stage-inner { height: max(360px, calc(100svh - 205px)); min-height: 0; }
 /* what you press opens here, over the bottom of the map, so it is never below the fold */
 .dm-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 10; max-height: 62%; overflow-y: auto; background: var(--paper); padding: 0 12px; box-shadow: 0 -18px 32px -22px rgba(0, 0, 0, .35); animation: dm-sheet-in 220ms cubic-bezier(.23, 1, .32, 1); }
 @keyframes dm-sheet-in { from { transform: translateY(16px); opacity: .6; } to { transform: none; opacity: 1; } }
@@ -39,12 +39,12 @@
 .dm-cityg.sel .dm-clab { font-weight: 700; }
 .dm-cityg.sel .dm-clab .ct { fill: var(--ink); }
 .dm-route { fill: none; stroke: var(--ink); stroke-width: 1.7; vector-effect: non-scaling-stroke; stroke-linecap: round; cursor: pointer; transition: opacity 220ms cubic-bezier(.23,1,.32,1), stroke-width 160ms cubic-bezier(.23,1,.32,1); }
-.dm-route.trip { stroke: var(--steel); stroke-width: 1.15; }
+.dm-route.trip { stroke: var(--steel); stroke-opacity: .5; stroke-width: 3.2; }
 .dm-route.dim { opacity: .28; }
 .dm-route.sel { stroke-width: 2.6; }
-.dm-route.trip.sel { stroke: var(--ink); }
+.dm-route.trip.sel { stroke: var(--ink); stroke-opacity: .55; stroke-width: 4; }
 .dm-hit { fill: none; stroke: transparent; vector-effect: non-scaling-stroke; stroke-width: 16; cursor: pointer; }
-.dm-cont { fill: var(--steel); }
+.dm-cont { fill: var(--signal); }
 .dm-cont.dim { opacity: .28; }
 .dm-bcount { font-weight: 600; fill: var(--ink); text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--paper); stroke-linejoin: round; pointer-events: none; transition: opacity 220ms cubic-bezier(.23,1,.32,1); }
 .dm-bcount.dim { opacity: .28; }

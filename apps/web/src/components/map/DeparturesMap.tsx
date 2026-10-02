@@ -151,19 +151,12 @@ export function DeparturesMap() {
       {/* lead: the full invitation for the country, one compact line once a state is open */}
       {st ? (
         <div className="flex flex-col gap-2.5 pb-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-          <div className="flex flex-col gap-1">
-            <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-              <span className="text-[clamp(1.25rem,1.9vw,1.6rem)] font-semibold leading-tight tracking-display">{st.name}</span>
-              <span className="tnum text-[17px] text-muted">
-                {st.requests} {st.requests === 1 ? 'request' : 'requests'} · {st.trips} {st.trips === 1 ? 'trip' : 'trips'}
-              </span>
-            </h1>
-            <div className="dm-legend flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-steel">
-              <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.6px] border-ink" /> Request</span>
-              <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.2px] border-dashed border-steel" /> Driver trip</span>
-              <span className="flex items-center gap-2"><i className="font-bold tracking-[2px] text-steel">···</i> continues out of state</span>
-            </div>
-          </div>
+          <h1 className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
+            <span className="text-[clamp(1.7rem,3vw,2.5rem)] font-semibold leading-[1.06] tracking-display">{st.name}</span>
+            <span className="tnum text-[17px] text-muted">
+              {st.requests} {st.requests === 1 ? 'request' : 'requests'} · {st.trips} {st.trips === 1 ? 'trip' : 'trips'}
+            </span>
+          </h1>
           {data && <div className="w-full sm:w-[38%] sm:max-w-[420px]">{search}</div>}
         </div>
       ) : (
@@ -211,6 +204,13 @@ export function DeparturesMap() {
           {view.hint.text}
           {!signedIn && view.level === 'country' && <span> Log in to see prices and who is driving.</span>}
         </div>
+        {view.level === 'state' && (
+          <div className="dm-legend flex flex-wrap items-center gap-x-4 gap-y-1 whitespace-nowrap text-[12px] text-steel">
+            <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.6px] border-ink" /> Request</span>
+            <span className="flex items-center gap-2"><i className="inline-block w-6 rounded-full border-t-[3px] border-steel/50" /> Driver trip</span>
+            <span className="flex items-center gap-2"><i className="font-bold tracking-[2px] text-signal">···</i> continues out of state</span>
+          </div>
+        )}
         {view.level === 'country' && data && <div className="w-full sm:w-[38%] sm:max-w-[420px]">{search}</div>}
       </div>
 
