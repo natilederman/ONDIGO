@@ -114,7 +114,7 @@ export function DeparturesMap() {
   const stateAbbr = view.state?.abbr ?? null;
   useEffect(() => {
     if (!stateAbbr || !rootRef.current) return;
-    const top = rootRef.current.getBoundingClientRect().top + window.scrollY - 76;
+    const top = rootRef.current.getBoundingClientRect().top + window.scrollY - 72;
     window.scrollTo({ top: Math.max(0, top), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }, [stateAbbr]);
   const showStage = () => stageRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -150,13 +150,20 @@ export function DeparturesMap() {
     <section ref={rootRef} data-level="country">
       {/* lead: the full invitation for the country, one compact line once a state is open */}
       {st ? (
-        <div className="flex flex-col gap-3 pb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-          <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-            <span className="text-[clamp(1.25rem,1.9vw,1.6rem)] font-semibold leading-tight tracking-display">{st.name}</span>
-            <span className="tnum text-[17px] text-muted">
-              {st.requests} {st.requests === 1 ? 'request' : 'requests'} · {st.trips} {st.trips === 1 ? 'trip' : 'trips'}
-            </span>
-          </h1>
+        <div className="flex flex-col gap-2.5 pb-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <div className="flex flex-col gap-1">
+            <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <span className="text-[clamp(1.25rem,1.9vw,1.6rem)] font-semibold leading-tight tracking-display">{st.name}</span>
+              <span className="tnum text-[17px] text-muted">
+                {st.requests} {st.requests === 1 ? 'request' : 'requests'} · {st.trips} {st.trips === 1 ? 'trip' : 'trips'}
+              </span>
+            </h1>
+            <div className="dm-legend flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-steel">
+              <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.6px] border-ink" /> Request</span>
+              <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.2px] border-dashed border-steel" /> Driver trip</span>
+              <span className="flex items-center gap-2"><i className="font-bold tracking-[2px] text-steel">···</i> continues out of state</span>
+            </div>
+          </div>
           {data && <div className="w-full sm:w-[38%] sm:max-w-[420px]">{search}</div>}
         </div>
       ) : (
@@ -197,32 +204,16 @@ export function DeparturesMap() {
         )}
       </div>
 
-      {/* under the map: how to use it on the left; search (country) or All states (state) on the right */}
+      {/* under the map: one sentence on how to use it; the search sits here on the country view */}
       <div className="mt-2 flex flex-col gap-2 text-[12.5px] text-muted sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-        <div className="flex flex-col gap-1">
-          <div className="dm-hint">
-            {view.hint.strong && <b className="font-semibold text-ink">{view.hint.strong}</b>}
-            {view.hint.text}
-            {!signedIn && <span> Log in to see prices and who is driving.</span>}
-          </div>
-          {view.level === 'state' && (
-            <div className="dm-legend flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-steel">
-              <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.6px] border-ink" /> Request</span>
-              <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.2px] border-dashed border-steel" /> Driver trip</span>
-              <span className="flex items-center gap-2"><i className="font-bold tracking-[2px] text-steel">···</i> continues out of state</span>
-            </div>
-          )}
+        <div className="dm-hint">
+          {view.hint.strong && <b className="font-semibold text-ink">{view.hint.strong}</b>}
+          {view.hint.text}
+          {!signedIn && view.level === 'country' && <span> Log in to see prices and who is driving.</span>}
         </div>
-        {view.level === 'state' ? (
-          <button type="button" onClick={() => engineRef.current?.closeState()} className={`${PILL} self-end border-line-strong text-muted hover:border-ink sm:self-auto`}>
-            All states
-          </button>
-        ) : (
-          data && <div className="w-full sm:w-[38%] sm:max-w-[420px]">{search}</div>
-        )}
+        {view.level === 'country' && data && <div className="w-full sm:w-[38%] sm:max-w-[420px]">{search}</div>}
       </div>
 
-      {/* under the map */}
       <div className="mt-4">
         {items && (
           <Under

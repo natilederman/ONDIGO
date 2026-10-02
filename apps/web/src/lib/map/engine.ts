@@ -371,7 +371,17 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
       dy = y1 - y0,
       cx = (x0 + x1) / 2,
       cy = (y0 + y1) / 2;
-    const VH = viewH();
+    // the frame hugs the state: as tall as the screen allows for a tall state,
+    // shorter for a wide one, so there are no empty bands above and below it
+    const box = svgEl.parentElement as HTMLElement | null;
+    if (box) box.style.height = '';
+    const fr0 = svgEl.getBoundingClientRect();
+    let VH = viewH();
+    if (box && fr0.width && fr0.height) {
+      const want = Math.min(fr0.height, (fr0.width * dy) / dx / 0.86 + 12);
+      box.style.height = `${Math.round(want)}px`;
+      VH = Math.round((W * want) / fr0.width);
+    }
     svg.attr('viewBox', `0 0 ${W} ${VH}`);
     // small states need more than 10x on a phone, where the lower 48 fill the same box
     const K = Math.min(18, 0.86 / Math.max(dx / W, dy / VH));
@@ -446,6 +456,8 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
     open = null;
     scope = null;
     opts.root.dataset.level = 'country';
+    const box = svgEl.parentElement as HTMLElement | null;
+    if (box) box.style.height = '';
     svg.attr('viewBox', `0 0 ${W} ${H}`);
     defs.select('pattern').attr('patternTransform', null);
     emit();
@@ -721,11 +733,11 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
   function hintFor(): ViewState['hint'] {
     const how = isPhone() ? 'Pinch' : 'Pinch or Ctrl+scroll';
     if (level === 'country') return { text: `${how} for more towns. Press a state, or search for a place.` };
-    if (city) return { strong: city.name, text: `: ${bundles.length} ${bundles.length === 1 ? 'connection' : 'connections'} drawn. Press the state or Esc to clear.` };
+    if (city) return { strong: city.name, text: `: ${bundles.length} ${bundles.length === 1 ? 'connection' : 'connections'} drawn; press the state or Esc to clear.` };
     const n = cityEls.filter((e) => e.c.n).length;
     return n
-      ? { strong: `${n} ${n === 1 ? 'city has' : 'cities have'} deliveries.`, text: ` Press one to see what leaves and arrives there. ${how} for more towns.` }
-      : { text: `Nothing leaves or arrives here yet. ${how} for more towns.` };
+      ? { strong: `${n} ${n === 1 ? 'city has' : 'cities have'} deliveries`, text: `; press one to see what leaves and arrives, or click outside the state for all states.` }
+      : { text: `Nothing leaves or arrives here yet; click outside the state for all states.` };
   }
 
   function emit() {
