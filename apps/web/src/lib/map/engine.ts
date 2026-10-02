@@ -315,6 +315,9 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
   document.addEventListener('keydown', onKey);
   const onResize = () => relayout();
   addEventListener('resize', onResize);
+  // the side panel narrows the map without a window resize; keep labels and dots at their pixel sizes
+  const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => relayout()) : null;
+  ro?.observe(svgEl);
 
   // ---------- zoom: pinch or ctrl+scroll, drag to pan ----------
   const zoomFilter = (ev: any) => (ev.type === 'wheel' ? ev.ctrlKey || ev.metaKey : !ev.button);
@@ -816,6 +819,7 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
       destroyed = true;
       document.removeEventListener('keydown', onKey);
       removeEventListener('resize', onResize);
+      ro?.disconnect();
       darkMq.removeEventListener('change', onTheme);
       svg.on('.zoom', null);
       svg.selectAll('*').interrupt().remove();

@@ -57,6 +57,15 @@
 .dm-row::after { content: ""; position: absolute; inset: 0 -16px; background: linear-gradient(90deg, var(--fade), transparent 62%); opacity: 0; pointer-events: none; transition: opacity 200ms cubic-bezier(.23,1,.32,1); }
 @media (hover: hover) { .dm-row:hover::after { opacity: 1; } }
 
+/* the pressed city's list slides in beside the map on wide screens; the map eases to 75% */
+.dm-split { display: flex; align-items: stretch; }
+.dm-split > .dm-stage { flex: 1 1 auto; min-width: 0; }
+.dm-side { position: relative; flex: 0 0 auto; width: 0; margin-right: 0; opacity: 0; overflow: hidden; border-top: 1px solid var(--ink);
+  transition: width 560ms cubic-bezier(.77,0,.175,1), margin-right 560ms cubic-bezier(.77,0,.175,1), opacity 320ms ease; }
+.is-split .dm-side { width: 25%; margin-right: 24px; opacity: 1; transition-delay: 0ms, 0ms, 180ms; }
+.dm-side-inner { position: absolute; inset: 14px 0 0 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+@media (prefers-reduced-motion: reduce) { .dm-side { transition: none; } }
+
 /* search under the map */
 .dm-search { position: relative; }
 .dm-search input { width: 100%; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); font: inherit; font-size: 15px; padding: 11px 14px 11px 38px; outline: none; transition: border-color 150ms; }

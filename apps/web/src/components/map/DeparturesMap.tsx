@@ -47,6 +47,15 @@ export function DeparturesMap() {
   const [view, setView] = useState<ViewState>({ level: 'country', state: null, city: null, bundles: [], hint: { text: '' } });
   const [selected, setSelected] = useState<Selected>(null);
   const [phone, setPhone] = useState(false);
+  // two columns need room: from 1024 px wide the pressed city's list slides in beside the map
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const mq = matchMedia('(min-width: 1024px)');
+    const sync = () => setWide(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
   const [statesActive, setStatesActive] = useState(0);
 
   useEffect(() => {
@@ -135,6 +144,10 @@ export function DeparturesMap() {
   };
 
   const requestsTotal = items?.filter((i) => i.kind === 'request').length ?? 0;
+  const split = wide && !!view.city;
+  const underProps = items
+    ? { view, items, signedIn, requestsTotal, statesActive, selected, onItem: pickItem, onBundle: pickBundle, onBack: () => engineRef.current?.clearCity() }
+    : null;
   const search = data ? (
     <PlaceSearch
       cities={data.cities}
@@ -181,6 +194,10 @@ export function DeparturesMap() {
       )}
 
       {/* stage: at state level it is sized to the screen, and what you press opens inside it */}
+      <div className={`dm-split${split ? ' is-split' : ''}`}>
+        <aside className="dm-side" aria-hidden={!split}>
+          <div className="dm-side-inner">{split && underProps && <Under {...underProps} compact />}</div>
+        </aside>
       <div ref={stageRef} className="dm-stage">
         <div className="dm-stage-inner">
           <svg ref={svgRef} className="dm-svg" role="img" aria-label="Map of the United States with the number of open delivery requests leaving each state" />
@@ -195,6 +212,7 @@ export function DeparturesMap() {
             <Bar selected={selected} city={city} signedIn={signedIn} onClose={closeBar} />
           </div>
         )}
+      </div>
       </div>
 
       {/* under the map: one sentence on how to use it; the search sits here on the country view */}
@@ -214,21 +232,7 @@ export function DeparturesMap() {
         {view.level === 'country' && data && <div className="w-full sm:w-[38%] sm:max-w-[420px]">{search}</div>}
       </div>
 
-      <div className="mt-4">
-        {items && (
-          <Under
-            view={view}
-            items={items}
-            signedIn={signedIn}
-            requestsTotal={requestsTotal}
-            statesActive={statesActive}
-            selected={selected}
-            onItem={pickItem}
-            onBundle={pickBundle}
-            onBack={() => engineRef.current?.clearCity()}
-          />
-        )}
-      </div>
+      <div className="mt-4">{!split && underProps && <Under {...underProps} />}</div>
     </section>
   );
 }
@@ -304,9 +308,9 @@ function Bar({ selected, city, signedIn, onClose }: { selected: NonNullable<Sele
 
 /* ---------- the list under the map ---------- */
 
-function Gate({ lead, rest }: { lead: string; rest: string }) {
+function Gate({ lead, rest, compact }: { lead: string; rest: string; compact?: boolean }) {
   return (
-    <div className="grid items-center gap-5 border-b border-line border-t border-t-ink px-1 py-5 md:grid-cols-[1fr_auto]">
+    <div className={`grid items-center gap-5 border-b border-line border-t border-t-ink px-1 py-5 ${compact ? '' : 'md:grid-cols-[1fr_auto]'}`}>
       <p className="max-w-[56ch] text-[15px] leading-relaxed text-muted">
         <b className="font-semibold text-ink">{lead}</b> {rest}
       </p>
@@ -318,7 +322,17 @@ function Gate({ lead, rest }: { lead: string; rest: string }) {
   );
 }
 
-function Head({ title, aside, children }: { title: string; aside?: React.ReactNode; children?: React.ReactNode }) {
+function Head({ title, aside, children, compact }: { title: string; aside?: React.ReactNode; children?: React.ReactNode; compact?: boolean }) {
+  if (compact)
+    return (
+      <div className="border-b border-ink px-1 pb-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-[clamp(1.15rem,1.6vw,1.4rem)] font-semibold leading-tight tracking-display">{title}</h2>
+          {children}
+        </div>
+        {aside && <div className="mt-1 text-[12px] text-steel">{aside}</div>}
+      </div>
+    );
   return (
     <div className="flex items-baseline justify-between gap-4 border-b border-ink px-1 pb-2.5 pt-4">
       <h2 className="text-[15px] font-semibold tracking-[-0.01em]">{title}</h2>
@@ -329,22 +343,27 @@ function Head({ title, aside, children }: { title: string; aside?: React.ReactNo
 
 const Sub = ({ children }: { children: React.ReactNode }) => <div className={`border-b border-line px-1 pb-1.5 pt-4 ${LABEL}`}>{children}</div>;
 
-function Row({ item, sel, onClick }: { item: MapItem; sel: boolean; onClick: () => void }) {
+const rowCls = (compact: boolean | undefined, sel: boolean) =>
+  `dm-row grid w-full grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-1 text-left ${compact ? 'py-3' : 'py-4 md:grid-cols-[1.6fr_1fr_96px_120px] md:gap-x-6'} ${sel ? 'border-b-2 border-ink' : 'border-b border-line'}`;
+const routeCls = (compact?: boolean) => `${compact ? 'col-span-2 row-start-1 text-[15px]' : 'text-[clamp(1.05rem,1.6vw,1.35rem)]'} font-semibold leading-[1.15] tracking-display`;
+// narrow column: route on its own line, then the item on the left with price over status on the right
+const cell = (compact: boolean | undefined, which: 'item' | 'price' | 'status', wideCls: string) =>
+  compact
+    ? { item: 'col-start-1 row-start-2 row-span-2 self-start', price: 'col-start-2 row-start-2', status: 'col-start-2 row-start-3' }[which]
+    : wideCls;
+
+function Row({ item, sel, onClick, compact }: { item: MapItem; sel: boolean; onClick: () => void; compact?: boolean }) {
   const same = item.from.state === item.to.state;
   const isTrip = item.kind === 'trip';
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`dm-row grid w-full grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-1 py-4 text-left md:grid-cols-[1.6fr_1fr_96px_120px] md:gap-x-6 ${sel ? 'border-b-2 border-ink' : 'border-b border-line'}`}
-    >
-      <div className="text-[clamp(1.05rem,1.6vw,1.35rem)] font-semibold leading-[1.12] tracking-display">
+    <button type="button" onClick={onClick} className={rowCls(compact, sel)}>
+      <div className={routeCls(compact)}>
         {item.from.city}<span aria-hidden className="mx-1.5 font-normal text-steel">&#8594;</span>{item.to.city}
         {!same && <span className="ml-1.5 text-[.68em] font-semibold tracking-[0.06em] text-steel">{item.to.state}</span>}
       </div>
-      <div className="row-start-2 text-[14px] text-muted md:row-start-auto">{isTrip ? `${item.driver}, ${cap(item.vehicle)}` : item.item}</div>
-      <div className="tnum row-start-1 text-right text-[1.05rem] font-semibold tracking-display md:row-start-auto">{!isTrip && typeof item.price === 'number' ? `$${item.price.toFixed(0)}` : ''}</div>
-      <div className="row-start-2 text-right text-[13px] font-semibold md:row-start-auto">
+      <div className={`text-muted ${compact ? 'text-[13px]' : 'text-[14px]'} ${cell(compact, 'item', 'row-start-2 md:row-start-auto')}`}>{isTrip ? `${item.driver}, ${cap(item.vehicle)}` : item.item}</div>
+      <div className={`tnum text-right font-semibold tracking-display ${compact ? 'text-[15px]' : 'text-[1.05rem]'} ${cell(compact, 'price', 'row-start-1 md:row-start-auto')}`}>{!isTrip && typeof item.price === 'number' ? `$${item.price.toFixed(0)}` : ''}</div>
+      <div className={`text-right text-[12.5px] font-semibold ${cell(compact, 'status', 'row-start-2 md:row-start-auto')}`}>
         {isTrip ? (
           <>{item.departAt ? cap(departsIn(item.departAt)) : ''}<small className={`block ${LABEL} mt-0.5`}>Departs</small></>
         ) : item.mode === 'auction' && item.endsAt ? (
@@ -357,26 +376,26 @@ function Row({ item, sel, onClick }: { item: MapItem; sel: boolean; onClick: () 
   );
 }
 
-function BundleRow({ b, city, out, sel, onClick }: { b: Bundle; city: CityNode; out: boolean; sel: boolean; onClick: () => void }) {
+function BundleRow({ b, city, out, sel, onClick, compact }: { b: Bundle; city: CityNode; out: boolean; sel: boolean; onClick: () => void; compact?: boolean }) {
   const mine = b.items.filter((i) => (i.from.key === city.key) === out);
   const au = mine.filter((i) => i.mode === 'auction').length;
   const same = b.other.state === city.state;
   return (
-    <button type="button" onClick={onClick} className={`dm-row grid w-full grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-1 py-4 text-left md:grid-cols-[1.6fr_1fr_96px_120px] md:gap-x-6 ${sel ? 'border-b-2 border-ink' : 'border-b border-line'}`}>
-      <div className="text-[clamp(1.05rem,1.6vw,1.35rem)] font-semibold leading-[1.12] tracking-display">
+    <button type="button" onClick={onClick} className={rowCls(compact, sel)}>
+      <div className={routeCls(compact)}>
         {out ? city.name : b.other.city}<span aria-hidden className="mx-1.5 font-normal text-steel">&#8594;</span>{out ? b.other.city : city.name}
         {!same && <span className="ml-1.5 text-[.68em] font-semibold tracking-[0.06em] text-steel">{b.other.state}</span>}
       </div>
-      <div className="row-start-2 text-[14px] text-muted md:row-start-auto">{au ? `${au} in auction` : 'Fixed price'}</div>
-      <div className="tnum row-start-1 text-right text-[1.05rem] font-semibold tracking-display md:row-start-auto">&times;{mine.length}</div>
-      <div className={`row-start-2 text-right md:row-start-auto ${LABEL}`}>Log in for prices</div>
+      <div className={`text-muted ${compact ? 'text-[13px]' : 'text-[14px]'} ${cell(compact, 'item', 'row-start-2 md:row-start-auto')}`}>{au ? `${au} in auction` : 'Fixed price'}</div>
+      <div className={`tnum text-right font-semibold tracking-display ${compact ? 'text-[15px]' : 'text-[1.05rem]'} ${cell(compact, 'price', 'row-start-1 md:row-start-auto')}`}>&times;{mine.length}</div>
+      <div className={`text-right ${cell(compact, 'status', 'row-start-2 md:row-start-auto')} ${LABEL}`}>Log in for prices</div>
     </button>
   );
 }
 
-function Under({ view, items, signedIn, requestsTotal, statesActive, selected, onItem, onBundle, onBack }: {
+function Under({ view, items, signedIn, requestsTotal, statesActive, selected, onItem, onBundle, onBack, compact }: {
   view: ViewState; items: MapItem[]; signedIn: boolean; requestsTotal: number; statesActive: number; selected: Selected;
-  onItem: (i: MapItem) => void; onBundle: (b: Bundle) => void; onBack: () => void;
+  onItem: (i: MapItem) => void; onBundle: (b: Bundle) => void; onBack: () => void; compact?: boolean;
 }) {
   const selId = selected?.item?.id ?? selected?.bundle?.id;
   const st = view.state;
@@ -392,28 +411,28 @@ function Under({ view, items, signedIn, requestsTotal, statesActive, selected, o
   }
   const c = view.city;
   if (c) {
-    const back = <button type="button" onClick={onBack} className={`${PILL} border-line-strong text-muted`}>All of {st.name}</button>;
+    const back = <button type="button" onClick={onBack} className={`${PILL} shrink-0 border-line-strong text-muted ${compact ? '!px-3 !py-1.5 !text-[12px]' : ''}`}>{compact ? 'Close' : `All of ${st.name}`}</button>;
     const aside = `${c.n} ${c.n === 1 ? 'request' : 'requests'}, ${c.trips.length} driver ${c.trips.length === 1 ? 'trip' : 'trips'}`;
     if (!c.n && !c.trips.length)
-      return (<><Head title={c.name} aside={aside}>{back}</Head><p className="px-1 py-5 text-[14.5px] text-muted">Nothing leaves or arrives in {c.name} yet.</p></>);
+      return (<><Head compact={compact} title={c.name} aside={aside}>{back}</Head><p className="px-1 py-5 text-[14.5px] text-muted">Nothing leaves or arrives in {c.name} yet.</p></>);
     if (signedIn)
       return (
         <>
-          <Head title={c.name} aside={aside}>{back}</Head>
-          {c.leaving.length > 0 && <><Sub>Leaving</Sub>{c.leaving.map((i) => <Row key={i.id} item={i} sel={selId === i.id} onClick={() => onItem(i)} />)}</>}
-          {c.arriving.length > 0 && <><Sub>Arriving</Sub>{c.arriving.map((i) => <Row key={i.id} item={i} sel={selId === i.id} onClick={() => onItem(i)} />)}</>}
-          {c.trips.length > 0 && <><Sub>Drivers passing through</Sub>{c.trips.map((i) => <Row key={i.id} item={i} sel={selId === i.id} onClick={() => onItem(i)} />)}</>}
+          <Head compact={compact} title={c.name} aside={aside}>{back}</Head>
+          {c.leaving.length > 0 && <><Sub>Leaving</Sub>{c.leaving.map((i) => <Row compact={compact} key={i.id} item={i} sel={selId === i.id} onClick={() => onItem(i)} />)}</>}
+          {c.arriving.length > 0 && <><Sub>Arriving</Sub>{c.arriving.map((i) => <Row compact={compact} key={i.id} item={i} sel={selId === i.id} onClick={() => onItem(i)} />)}</>}
+          {c.trips.length > 0 && <><Sub>Drivers passing through</Sub>{c.trips.map((i) => <Row compact={compact} key={i.id} item={i} sel={selId === i.id} onClick={() => onItem(i)} />)}</>}
         </>
       );
     const outB = view.bundles.filter((b) => b.kind === 'request' && b.items.some((i) => i.from.key === c.key));
     const inB = view.bundles.filter((b) => b.kind === 'request' && b.items.some((i) => i.from.key !== c.key));
     return (
       <>
-        <Head title={c.name} aside={aside}>{back}</Head>
-        {outB.length > 0 && <><Sub>Leaving</Sub>{outB.map((b) => <BundleRow key={b.id} b={b} city={c} out sel={selId === b.id} onClick={() => onBundle(b)} />)}</>}
-        {inB.length > 0 && <><Sub>Arriving</Sub>{inB.map((b) => <BundleRow key={'in' + b.id} b={b} city={c} out={false} sel={selId === b.id} onClick={() => onBundle(b)} />)}</>}
+        <Head compact={compact} title={c.name} aside={aside}>{back}</Head>
+        {outB.length > 0 && <><Sub>Leaving</Sub>{outB.map((b) => <BundleRow compact={compact} key={b.id} b={b} city={c} out sel={selId === b.id} onClick={() => onBundle(b)} />)}</>}
+        {inB.length > 0 && <><Sub>Arriving</Sub>{inB.map((b) => <BundleRow compact={compact} key={'in' + b.id} b={b} city={c} out={false} sel={selId === b.id} onClick={() => onBundle(b)} />)}</>}
         {c.trips.length > 0 && <><Sub>Drivers passing through</Sub><p className="px-1 py-4 text-[14.5px] text-muted">{c.trips.length} driver {c.trips.length === 1 ? 'trip touches' : 'trips touch'} {c.name}. Log in to see who and when.</p></>}
-        <Gate lead="Prices, items and drivers are visible to members." rest="Log in to bid or to book one of these." />
+        <Gate compact={compact} lead="Prices, items and drivers are visible to members." rest="Log in to bid or to book one of these." />
       </>
     );
   }
