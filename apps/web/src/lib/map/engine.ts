@@ -720,7 +720,7 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
 
   function hintFor(): ViewState['hint'] {
     const how = isPhone() ? 'Pinch' : 'Pinch or Ctrl+scroll';
-    if (level === 'country') return { text: `${how} for more towns. Press a state, or search for a place below.` };
+    if (level === 'country') return { text: `${how} for more towns. Press a state, or search for a place.` };
     if (city) return { strong: city.name, text: `: ${bundles.length} ${bundles.length === 1 ? 'connection' : 'connections'} drawn. Press the state or Esc to clear.` };
     const n = cityEls.filter((e) => e.c.n).length;
     return n

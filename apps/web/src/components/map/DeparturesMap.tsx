@@ -110,6 +110,15 @@ export function DeparturesMap() {
     };
   }, [data, items, phone]);
 
+  // opening a state lines the page up so the title, the map and the row under it all fit
+  const stateAbbr = view.state?.abbr ?? null;
+  useEffect(() => {
+    if (!stateAbbr || !rootRef.current) return;
+    const top = rootRef.current.getBoundingClientRect().top + window.scrollY - 76;
+    window.scrollTo({ top: Math.max(0, top), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }, [stateAbbr]);
+  const showStage = () => stageRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
   const closeBar = useCallback(() => {
     setSelected(null);
     engineRef.current?.highlightBundle(null);
@@ -117,52 +126,61 @@ export function DeparturesMap() {
   const pickItem = (item: MapItem) => {
     setSelected({ item });
     engineRef.current?.highlightItem(item.id);
+    showStage();
   };
   const pickBundle = (b: Bundle) => {
     setSelected({ bundle: b });
     engineRef.current?.highlightBundle(b.id);
+    showStage();
   };
 
   const requestsTotal = items?.filter((i) => i.kind === 'request').length ?? 0;
+  const search = data ? (
+    <PlaceSearch
+      cities={data.cities}
+      states={engineRef.current?.states ?? []}
+      counts={engineRef.current?.counts ?? {}}
+      onPick={(abbr, cityKey) => engineRef.current?.goTo(abbr, cityKey)}
+    />
+  ) : null;
   const st = view.state;
   const city = view.city;
 
   return (
     <section ref={rootRef} data-level="country">
-      {/* lead */}
-      <div className="flex flex-col items-start justify-between gap-5 pb-4 sm:flex-row sm:items-end sm:gap-8">
-        <div>
-          <h1 className="text-[clamp(1.7rem,3vw,2.5rem)] font-semibold leading-[1.06] tracking-display text-balance sm:whitespace-nowrap">
-            {st ? st.name : 'The journey someone’s already making.'}
+      {/* lead: the full invitation for the country, one compact line once a state is open */}
+      {st ? (
+        <div className="flex flex-col gap-3 pb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+            <span className="text-[clamp(1.25rem,1.9vw,1.6rem)] font-semibold leading-tight tracking-display">{st.name}</span>
+            <span className="tnum text-[17px] text-muted">
+              {st.requests} {st.requests === 1 ? 'request' : 'requests'} · {st.trips} {st.trips === 1 ? 'trip' : 'trips'}
+            </span>
           </h1>
-          <p className="mt-3 max-w-[54ch] text-[17px] leading-relaxed text-muted">
-            {st
-              ? `${st.requests} open ${st.requests === 1 ? 'request' : 'requests'} leaving ${st.name}, ${st.trips} driver ${st.trips === 1 ? 'trip' : 'trips'} touching it. Press a city to see its deliveries.`
-              : 'Post what you need moved, and a driver already making that trip takes it along. It’s as easy, and as safe, as asking a friend.'}
-            {st && !signedIn && ' Log in to see prices and who is driving.'}
-          </p>
+          {data && <div className="w-full sm:w-[38%] sm:max-w-[420px]">{search}</div>}
         </div>
-        <div className="flex flex-col items-start gap-2.5 sm:items-end sm:pb-1">
-          {view.level === 'country' ? (
-            <>
-              <div className="flex items-center gap-3">
-                <Link href="/trips/new" className={`${PILL} border-line-strong hover:border-ink`}>
-                  Post a trip
-                </Link>
-                <Link href="/requests/new" className={`${PILL} border-ink bg-ink text-paper`}>
-                  Post a request
-                </Link>
-              </div>
-            </>
-          ) : (
-            <button type="button" onClick={() => engineRef.current?.closeState()} className={`${PILL} border-line-strong text-muted hover:border-ink`}>
-              All states
-            </button>
-          )}
+      ) : (
+        <div className="flex flex-col items-start justify-between gap-5 pb-4 sm:flex-row sm:items-end sm:gap-8">
+          <div>
+            <h1 className="text-[clamp(1.7rem,3vw,2.5rem)] font-semibold leading-[1.06] tracking-display text-balance sm:whitespace-nowrap">
+              The journey someone’s already making.
+            </h1>
+            <p className="mt-3 max-w-[54ch] text-[17px] leading-relaxed text-muted">
+              Post what you need moved, and a driver already making that trip takes it along. It’s as easy, and as safe, as asking a friend.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 sm:pb-1">
+            <Link href="/trips/new" className={`${PILL} border-line-strong hover:border-ink`}>
+              Post a trip
+            </Link>
+            <Link href="/requests/new" className={`${PILL} border-ink bg-ink text-paper`}>
+              Post a request
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* stage */}
+      {/* stage: at state level it is sized to the screen, and what you press opens inside it */}
       <div ref={stageRef} className="dm-stage">
         <div className="dm-stage-inner">
           <svg ref={svgRef} className="dm-svg" role="img" aria-label="Map of the United States with the number of open delivery requests leaving each state" />
@@ -172,39 +190,40 @@ export function DeparturesMap() {
           {error && <p className="-mt-[40%] text-center text-[13px] text-signal">{error}</p>}
         </div>
         <div ref={hoverRef} className="dm-hover" />
-      </div>
-      <div className="mt-2 flex flex-col gap-1.5 text-[12.5px] text-muted sm:flex-row sm:items-baseline sm:justify-between">
-        <div className="dm-hint">
-          {view.hint.strong && <b className="font-semibold text-ink">{view.hint.strong}</b>}
-          {view.hint.text}
-          {view.level === 'country' && !signedIn && <span> Log in to see prices and who is driving.</span>}
-        </div>
-        {view.level === 'state' && (
-          <div className="dm-legend flex items-center gap-4 whitespace-nowrap text-[12px] text-steel">
-            <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.6px] border-ink" /> Request</span>
-            <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.2px] border-dashed border-steel" /> Driver trip</span>
-            <span className="flex items-center gap-2"><i className="font-bold tracking-[2px] text-steel">···</i> continues out of state</span>
+        {selected && (
+          <div className="dm-sheet" role="dialog" aria-label="Selected route">
+            <Bar selected={selected} city={city} signedIn={signedIn} onClose={closeBar} />
           </div>
         )}
       </div>
 
-      {/* find a place the map is not showing at this zoom */}
-      {data && (
-        <div className="mt-3">
-          <PlaceSearch
-            cities={data.cities}
-            states={engineRef.current?.states ?? []}
-            counts={engineRef.current?.counts ?? {}}
-            onPick={(abbr, cityKey) => engineRef.current?.goTo(abbr, cityKey)}
-          />
+      {/* under the map: how to use it on the left; search (country) or All states (state) on the right */}
+      <div className="mt-2 flex flex-col gap-2 text-[12.5px] text-muted sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="flex flex-col gap-1">
+          <div className="dm-hint">
+            {view.hint.strong && <b className="font-semibold text-ink">{view.hint.strong}</b>}
+            {view.hint.text}
+            {!signedIn && <span> Log in to see prices and who is driving.</span>}
+          </div>
+          {view.level === 'state' && (
+            <div className="dm-legend flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-steel">
+              <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.6px] border-ink" /> Request</span>
+              <span className="flex items-center gap-2"><i className="inline-block w-6 border-t-[1.2px] border-dashed border-steel" /> Driver trip</span>
+              <span className="flex items-center gap-2"><i className="font-bold tracking-[2px] text-steel">···</i> continues out of state</span>
+            </div>
+          )}
         </div>
-      )}
+        {view.level === 'state' ? (
+          <button type="button" onClick={() => engineRef.current?.closeState()} className={`${PILL} self-end border-line-strong text-muted hover:border-ink sm:self-auto`}>
+            All states
+          </button>
+        ) : (
+          data && <div className="w-full sm:w-[38%] sm:max-w-[420px]">{search}</div>
+        )}
+      </div>
 
       {/* under the map */}
-      <div className="mt-2">
-        {selected && (
-          <Bar selected={selected} city={city} signedIn={signedIn} onClose={closeBar} />
-        )}
+      <div className="mt-4">
         {items && (
           <Under
             view={view}
@@ -270,7 +289,7 @@ function Bar({ selected, city, signedIn, onClose }: { selected: NonNullable<Sele
         price = (
           <div className="text-right">
             <div className="tnum text-[clamp(1.15rem,1.8vw,1.5rem)] font-semibold tracking-display">{lo === hi ? `$${lo}` : `$${lo} to $${hi}`}</div>
-            <div className="mt-0.5 text-[11px] font-semibold tracking-[0.1em] text-steel">{b.items.filter((i) => i.mode === 'auction').length} IN AUCTION</div>
+            <div className="mt-0.5 text-[11px] font-semibold tracking-[0.1em] text-steel">{(() => { const n = b.items.filter((i) => i.mode === 'auction').length; return n ? `${n} IN AUCTION` : 'NO BIDDING'; })()}</div>
           </div>
         );
       }
