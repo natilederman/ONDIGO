@@ -155,6 +155,10 @@
     Desaturating the tile layer alone leaves the route line and the two end
     markers as the only colour on the map.
   */
+  /* Leaflet panes and controls carry z-index 400-1000; keep them under the sticky header */
+  .ondigo-map {
+    isolation: isolate;
+  }
   .ondigo-map .leaflet-tile-pane {
     filter: grayscale(1) contrast(0.92) brightness(1.04);
   }
@@ -226,3 +230,11 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* "is typing": three dots that rise in turn */
+.dm-typing { display: inline-flex; gap: 3px; }
+.dm-typing i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: dm-typing 1s ease-in-out infinite; }
+.dm-typing i:nth-child(2) { animation-delay: 0.15s; }
+.dm-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dm-typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-3px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .dm-typing i { animation: none; opacity: 0.7; } }

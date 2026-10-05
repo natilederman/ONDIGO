@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { tripThreadQueries } from '@ondigo/shared';
 import { useAuth } from '@/lib/AuthProvider';
+import { getSupabaseClient } from '@/lib/supabaseClient';
 
 const links = [
   { href: '/trips', label: 'Trips' },
   { href: '/requests', label: 'Requests' },
+  { href: '/messages', label: 'Messages' },
   { href: '/verify', label: 'Get ready to carry' },
 ];
 
@@ -17,6 +20,27 @@ export function Navbar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [unread, setUnread] = useState(0);
+
+  // unread messages: checked on every page change and every half minute
+  useEffect(() => {
+    if (!user) return setUnread(0);
+    const client = getSupabaseClient();
+    const check = () => tripThreadQueries.unreadCount(client).then(setUnread);
+    check();
+    const t = setInterval(check, 30000);
+    window.addEventListener('ondigo:unread', check);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener('ondigo:unread', check);
+    };
+  }, [user, pathname]);
+  const badge = (href: string) =>
+    href === '/messages' && unread > 0 ? (
+      <span className="tnum ml-1.5 inline-flex min-w-[18px] items-center justify-center rounded-full bg-signal px-1.5 text-[10.5px] font-semibold leading-[18px] text-white" aria-label={`${unread} unread`}>
+        {unread}
+      </span>
+    ) : null;
 
   // the phone menu closes on navigation, on Escape, and on a tap anywhere else
   useEffect(() => setOpen(false), [pathname]);
@@ -85,6 +109,7 @@ export function Navbar() {
                   }`}
                 >
                   {l.label}
+                  {badge(l.href)}
                 </Link>
               );
             })}
@@ -130,7 +155,7 @@ export function Navbar() {
             const active = pathname?.startsWith(l.href);
             return (
               <Link key={l.href} href={l.href} aria-current={active ? 'page' : undefined} className={row}>
-                <span>{l.label}</span>
+                <span>{l.label}{badge(l.href)}</span>
                 {active && <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-steel">Here</span>}
               </Link>
             );

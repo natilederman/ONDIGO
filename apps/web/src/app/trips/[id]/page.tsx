@@ -3,22 +3,26 @@
 import { useEffect, useState, use } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { tripQueries, requestQueries, afterStreet, type TripWithDriver, type DeliveryRequest } from '@ondigo/shared';
+import { tripQueries, requestQueries, tripThreadQueries, afterStreet, type TripWithDriver, type DeliveryRequest, type ThreadSummary } from '@ondigo/shared';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { DriverBadge } from '@/components/DriverBadge';
 import { matchRequests, type TripMatch } from '@/lib/route';
+import { TripConversation } from '@/components/TripConversation';
 
 const MapView = dynamic(() => import('@/components/MapView').then((m) => m.MapView), { ssr: false });
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { loading: authLoading } = useRequireAuth();
+  const { user, loading: authLoading } = useRequireAuth();
   const client = getSupabaseClient();
   const [trip, setTrip] = useState<TripWithDriver | null>(null);
   const [matches, setMatches] = useState<DeliveryRequest[]>([]);
+  // the member's own thread with the driver, or, for the driver, everyone who wrote
+  const [myThread, setMyThread] = useState<string | null | undefined>(undefined);
+  const [threads, setThreads] = useState<ThreadSummary[]>([]);
 
   useEffect(() => {
     tripQueries.getTrip(client, id).then(setTrip);
@@ -26,7 +30,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (authLoading || !trip) return null;
+  const isDriver = !!user && !!trip && trip.driver_id === user.id;
+  useEffect(() => {
+    if (!user || !trip) return;
+    if (isDriver) tripThreadQueries.myThreads(client).then((all) => setThreads(all.filter((t) => t.trip_id === trip.id)));
+    else tripThreadQueries.findThread(client, trip.id, user.id).then((t) => setMyThread(t?.id ?? null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, trip?.id, isDriver]);
+
+  if (authLoading || !trip || !user) return null;
+  const driverName = trip.driver?.full_name ?? 'the driver';
 
   // only what fits the vehicle, and only what is on this trip's way or starts where it starts
   const fits = matches.filter((r) => r.item_weight_kg <= trip.capacity_weight_kg);
@@ -56,6 +69,49 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           <DriverBadge driver={trip.driver} size={16} />
         </Link>
       </Card>
+
+      {isDriver ? (
+        <section>
+          <h2 className="text-lg font-semibold">Messages about this trip</h2>
+          {threads.length === 0 ? (
+            <p className="mt-2 text-sm text-muted">No one has written about this trip yet. Members can message you from this page.</p>
+          ) : (
+            <div className="mt-3 border-t border-ink">
+              {threads.map((t) => (
+                <Link key={t.id} href={`/messages/${t.id}`} className="flex items-baseline justify-between gap-4 border-b border-line px-1 py-3.5 hover:bg-ash/60">
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-semibold">{t.other_name}</span>
+                    <span className="block truncate text-[13px] text-muted">
+                      {t.last_offer !== null ? `Offer: $${Number(t.last_offer).toFixed(0)}` : t.last_body || 'Answered an offer'}
+                    </span>
+                  </span>
+                  {t.unread > 0 && (
+                    <span className="tnum shrink-0 rounded-full bg-ink px-2 py-0.5 text-[11px] font-semibold text-paper">{t.unread} new</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : (
+        myThread !== undefined && (
+          <section>
+            <div className="mb-3 flex items-baseline justify-between gap-4">
+              <h2 className="text-lg font-semibold">Message {driverName.split(' ')[0]}</h2>
+              <span className="text-[12.5px] text-steel">Private between you and {driverName.split(' ')[0]}</span>
+            </div>
+            <TripConversation
+              tripId={trip.id}
+              threadId={myThread}
+              me={user.id}
+              otherId={trip.driver_id}
+              otherName={driverName}
+              asMember
+              height={340}
+            />
+          </section>
+        )
+      )}
 
       <MapView
         markers={[

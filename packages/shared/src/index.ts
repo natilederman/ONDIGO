@@ -16,6 +16,7 @@ export type { MyDeliveryRow, PublicDeliveryRecord } from './queries/deliveries';
 export * as verificationQueries from './queries/verification';
 export type { QueueItem } from './queries/verification';
 export * as messageQueries from './queries/messages';
+export * as tripThreadQueries from './queries/tripThreads';
 export * as trackingQueries from './queries/tracking';
 export * as reviewQueries from './queries/reviews';
 export * as connectionQueries from './queries/connections';

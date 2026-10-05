@@ -29,6 +29,11 @@ export type LocationPing = Tables['location_pings']['Row'];
 export type Review = Tables['reviews']['Row'];
 export type PanicAlert = Tables['panic_alerts']['Row'];
 export type Connection = Tables['connections']['Row'];
+export type TripThread = Tables['trip_threads']['Row'];
+export type TripMessage = Tables['trip_messages']['Row'];
+export type OfferStatus = Enums['offer_status'];
+/** One row of my_threads(): a conversation as the inbox shows it. */
+export type ThreadSummary = Database['public']['Functions']['my_threads']['Returns'][number];
 
 /** The precise address and contact fields, released only to the matched driver. */
 export type RequestContactDetails = Tables['request_contact_details']['Row'];

@@ -967,6 +967,116 @@ export type Database = {
           },
         ]
       }
+      trip_messages: {
+        Row: {
+          answers: string | null
+          body: string
+          created_at: string
+          id: string
+          offer_amount: number | null
+          offer_item: string | null
+          offer_status: Database["public"]["Enums"]["offer_status"] | null
+          read_at: string | null
+          sender_id: string
+          thread_id: string
+        }
+        Insert: {
+          answers?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          offer_amount?: number | null
+          offer_item?: string | null
+          offer_status?: Database["public"]["Enums"]["offer_status"] | null
+          read_at?: string | null
+          sender_id: string
+          thread_id: string
+        }
+        Update: {
+          answers?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          offer_amount?: number | null
+          offer_item?: string | null
+          offer_status?: Database["public"]["Enums"]["offer_status"] | null
+          read_at?: string | null
+          sender_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_messages_answers_fkey"
+            columns: ["answers"]
+            isOneToOne: false
+            referencedRelation: "trip_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "trip_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_threads: {
+        Row: {
+          created_at: string
+          driver_id: string
+          id: string
+          last_message_at: string
+          member_id: string
+          trip_id: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          id?: string
+          last_message_at?: string
+          member_id: string
+          trip_id: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          id?: string
+          last_message_at?: string
+          member_id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_threads_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_threads_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_threads_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           capacity_size: string
@@ -1366,6 +1476,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      demo_driver_reply: { Args: { p_thread: string }; Returns: string }
       demo_km: {
         Args: { a_lat: number; a_lng: number; b_lat: number; b_lng: number }
         Returns: number
@@ -1419,11 +1530,32 @@ export type Database = {
       }
       has_consent: { Args: { p_key: string; p_user: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      is_thread_party: { Args: { p_thread: string }; Returns: boolean }
       log_onboarding_event: {
         Args: { p_event: string; p_meta?: Json }
         Returns: undefined
       }
       map_public_activity: { Args: never; Returns: Json }
+      mark_thread_read: { Args: { p_thread: string }; Returns: undefined }
+      my_threads: {
+        Args: never
+        Returns: {
+          depart_at: string
+          destination_text: string
+          id: string
+          last_at: string
+          last_body: string
+          last_offer: number
+          origin_text: string
+          other_id: string
+          other_name: string
+          role: string
+          trip_id: string
+          unread: number
+        }[]
+      }
+      my_unread_count: { Args: never; Returns: number }
+      open_trip_thread: { Args: { p_trip: string }; Returns: string }
       place_bid: {
         Args: { p_amount: number; p_request_id: string }
         Returns: {
@@ -1483,6 +1615,10 @@ export type Database = {
           p_request: Database["public"]["Tables"]["delivery_requests"]["Row"]
         }
         Returns: Json
+      }
+      respond_to_offer: {
+        Args: { p_action: string; p_amount?: number; p_message: string }
+        Returns: string
       }
       set_suspension: {
         Args: { p_reason: string; p_user: string }
@@ -1573,6 +1709,7 @@ export type Database = {
         | "plants_garden"
         | "other"
         | "household_move"
+      offer_status: "open" | "accepted" | "declined" | "countered" | "withdrawn"
       pricing_mode: "fixed" | "auction"
       request_status: "open" | "matched" | "cancelled"
       transaction_status: "held" | "released" | "refunded"
@@ -1753,6 +1890,7 @@ export const Constants = {
         "other",
         "household_move",
       ],
+      offer_status: ["open", "accepted", "declined", "countered", "withdrawn"],
       pricing_mode: ["fixed", "auction"],
       request_status: ["open", "matched", "cancelled"],
       transaction_status: ["held", "released", "refunded"],
