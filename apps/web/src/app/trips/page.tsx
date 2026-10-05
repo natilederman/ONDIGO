@@ -13,7 +13,7 @@ import { PlaceFilter, placeMatches, usePlaceEnds, usePlaceFilter } from '@/compo
 const COLS = 'md:grid-cols-[1.55fr_1fr_120px_132px]';
 
 export default function TripsPage() {
-  const { loading: authLoading } = useRequireAuth();
+  const { user, loading: authLoading } = useRequireAuth();
   const client = getSupabaseClient();
   const [trips, setTrips] = useState<TripWithDriver[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,7 +92,13 @@ export default function TripsPage() {
 
                 <div className="mt-2 flex items-baseline justify-between gap-4 md:contents">
                   <div className="md:order-2">
-                    <DriverBadge driver={t.driver} />
+                    <span className="flex items-center gap-2">
+                      <DriverBadge driver={t.driver} />
+                      {/* your own trips: messages arrive there rather than go out */}
+                      {t.driver_id === user?.id && (
+                        <span className="border border-ink px-1.5 py-px text-[10.5px] font-semibold uppercase tracking-[0.1em]">Your trip</span>
+                      )}
+                    </span>
                     {t.notes && (
                       <p className="mt-1 line-clamp-1 text-[13px] text-steel">{t.notes}</p>
                     )}

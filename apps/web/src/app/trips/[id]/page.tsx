@@ -51,6 +51,20 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="space-y-6">
+      {isDriver && (
+        // the demo accounts both send and drive, so make it plain whose trip this is
+        <div className="flex flex-col gap-3 border-2 border-ink px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[14.5px] leading-relaxed">
+            <b className="font-semibold">This is your trip.</b>{' '}
+            <span className="text-muted">
+              You posted it as {driverName}, so this page is where members&apos; messages and offers reach you. To ask a driver to take something, open a trip someone else posted.
+            </span>
+          </p>
+          <Link href="/trips" className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-ink bg-ink px-4 py-2 text-[12.5px] font-semibold text-paper transition-transform duration-150 ease-out active:scale-[0.97]">
+            Other trips
+          </Link>
+        </div>
+      )}
       <div>
         <Badge>{trip.vehicle_type}</Badge>
         <h1 className="mt-3 text-2xl font-bold">
@@ -64,7 +78,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <Card>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Driver</p>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">{isDriver ? 'Driver (you)' : 'Driver'}</p>
         <Link href={`/profile/${trip.driver?.id}`} className="hover:underline">
           <DriverBadge driver={trip.driver} size={16} />
         </Link>
