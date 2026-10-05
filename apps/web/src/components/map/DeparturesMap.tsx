@@ -176,10 +176,10 @@ export function DeparturesMap() {
         <div className="flex flex-col items-start justify-between gap-5 pb-4 sm:flex-row sm:items-end sm:gap-8">
           <div>
             <h1 className="text-[clamp(1.7rem,3vw,2.5rem)] font-semibold leading-[1.06] tracking-display text-balance sm:whitespace-nowrap">
-              The journey someone’s already making.
+              Send anything with a driver who’s already going there.
             </h1>
             <p className="mt-3 max-w-[54ch] text-[17px] leading-relaxed text-muted">
-              Post what you need moved, and a driver already making that trip takes it along. It’s as easy, and as safe, as asking a friend.
+              Post your item and where it needs to go. Drivers on that route bid to carry it, and you choose the offer that suits you.
             </p>
           </div>
           <div className="flex items-center gap-3 sm:pb-1">
