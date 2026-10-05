@@ -33,6 +33,7 @@ export function TripConversation({
   otherName,
   asMember,
   height = 460,
+  barFirst = false,
 }: {
   tripId: string;
   threadId: string | null;
@@ -41,7 +42,10 @@ export function TripConversation({
   otherName: string;
   /** the member side: may open the thread, and gets demo replies */
   asMember: boolean;
+  /** the most the thread grows to before it scrolls (or its fixed height when the bar sits at the bottom) */
   height?: number;
+  /** the trip page: just the bar until something is written, then the thread opens underneath and grows */
+  barFirst?: boolean;
 }) {
   const client = getSupabaseClient();
   const [threadId, setThreadId] = useState<string | null>(initialThread);
@@ -151,16 +155,15 @@ export function TripConversation({
   const byId = new Map(messages.map((m) => [m.id, m]));
   const agreed = [...messages].reverse().find((m) => m.offer_status === 'accepted');
 
-  return (
-    <div className="border border-ink">
-      {agreed && (
-        <div className="flex items-baseline justify-between gap-4 border-b border-ink bg-ink px-4 py-2.5 text-paper">
-          <span className="text-[13px] font-semibold">Agreed: {agreed.offer_item}</span>
-          <span className="tnum text-[15px] font-semibold">{money(agreed.offer_amount)}</span>
-        </div>
-      )}
+  const showThread = !barFirst || messages.length > 0 || typing;
 
-      <div ref={scroller} style={{ height }} className="space-y-3 overflow-y-auto px-4 py-4" aria-live="polite">
+  const thread = showThread && (
+      <div
+        ref={scroller}
+        style={barFirst ? { maxHeight: height } : { height }}
+        className={`space-y-3 overflow-y-auto px-4 py-4 ${barFirst ? 'dm-thread-in border-t border-ink' : ''}`}
+        aria-live="polite"
+      >
         {messages.length === 0 && !typing && (
           <p className="mx-auto max-w-[44ch] pt-6 text-center text-[14px] leading-relaxed text-muted">
             {asMember
@@ -224,13 +227,15 @@ export function TripConversation({
           </div>
         )}
       </div>
+  );
 
+  const bar = (
       <form
         onSubmit={(e) => {
           e.preventDefault();
           send();
         }}
-        className="border-t border-ink p-3"
+        className={`p-3 ${barFirst ? '' : 'border-t border-ink'}`}
       >
         {offering && (
           <div className="mb-2.5 grid grid-cols-[1fr_120px] gap-2">
@@ -285,6 +290,27 @@ export function TripConversation({
         </div>
         {error && <p className="mt-2 text-[13px] text-signal">{error}</p>}
       </form>
+  );
+
+  return (
+    <div className="border border-ink">
+      {agreed && (
+        <div className="flex items-baseline justify-between gap-4 border-b border-ink bg-ink px-4 py-2.5 text-paper">
+          <span className="text-[13px] font-semibold">Agreed: {agreed.offer_item}</span>
+          <span className="tnum text-[15px] font-semibold">{money(agreed.offer_amount)}</span>
+        </div>
+      )}
+      {barFirst ? (
+        <>
+          {bar}
+          {thread}
+        </>
+      ) : (
+        <>
+          {thread}
+          {bar}
+        </>
+      )}
     </div>
   );
 }

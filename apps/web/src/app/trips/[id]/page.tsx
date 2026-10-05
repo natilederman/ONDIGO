@@ -84,6 +84,17 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         </Link>
       </Card>
 
+      <MapView
+        markers={[
+          { lat: trip.origin_lat, lng: trip.origin_lng, label: trip.origin_text, color: '#0A0A0A' },
+          { lat: trip.destination_lat, lng: trip.destination_lng, label: trip.destination_text, color: '#FF5A1F' },
+        ]}
+        polyline={[
+          [trip.origin_lat, trip.origin_lng],
+          [trip.destination_lat, trip.destination_lng],
+        ]}
+      />
+
       {isDriver ? (
         <section>
           <h2 className="text-lg font-semibold">Messages about this trip</h2>
@@ -121,22 +132,12 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               otherId={trip.driver_id}
               otherName={driverName}
               asMember
-              height={340}
+              height={460}
+              barFirst
             />
           </section>
         )
       )}
-
-      <MapView
-        markers={[
-          { lat: trip.origin_lat, lng: trip.origin_lng, label: trip.origin_text, color: '#0A0A0A' },
-          { lat: trip.destination_lat, lng: trip.destination_lng, label: trip.destination_text, color: '#FF5A1F' },
-        ]}
-        polyline={[
-          [trip.origin_lat, trip.origin_lng],
-          [trip.destination_lat, trip.destination_lng],
-        ]}
-      />
 
       <section>
         <h2 className="text-lg font-semibold">On your way</h2>
