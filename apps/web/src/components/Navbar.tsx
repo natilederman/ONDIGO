@@ -43,7 +43,7 @@ export function Navbar() {
 
   return (
     <header ref={menuRef} className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur-md backdrop-saturate-150">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-6 sm:gap-6">
         <div className="flex items-center gap-3">
           {/* phones: the menu sits left of the mark and skips the map entirely */}
           <button
@@ -104,12 +104,13 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <Link href="/login" className="text-[13.5px] font-medium text-muted transition-colors duration-150 hover:text-ink">
+              {/* on phones Log in lives in the menu; the header keeps one compact Sign up */}
+              <Link href="/login" className="hidden whitespace-nowrap text-[13.5px] font-medium text-muted transition-colors duration-150 hover:text-ink sm:inline">
                 Log in
               </Link>
               <Link
                 href="/signup"
-                className="inline-flex items-center rounded-full border border-ink bg-ink px-4 py-2 text-[13.5px] font-semibold text-paper transition-transform duration-150 ease-out active:scale-[0.97]"
+                className="inline-flex items-center whitespace-nowrap rounded-full border border-ink bg-ink px-3.5 py-1.5 text-[13px] font-semibold text-paper transition-transform duration-150 ease-out active:scale-[0.97] sm:px-4 sm:py-2 sm:text-[13.5px]"
               >
                 Sign up
               </Link>
