@@ -160,7 +160,7 @@ export function DeparturesMap() {
   const city = view.city;
 
   return (
-    <section ref={rootRef} data-level="country">
+    <section ref={rootRef} data-level="country" className="-mt-8">
       {/* lead: the full invitation for the country, one compact line once a state is open */}
       {st ? (
         <div className="flex flex-col gap-2.5 pb-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
@@ -173,22 +173,23 @@ export function DeparturesMap() {
           {data && <div className="w-full sm:w-[38%] sm:max-w-[420px]">{search}</div>}
         </div>
       ) : (
-        <div className="flex flex-col items-start justify-between gap-5 pb-4 sm:flex-row sm:items-end sm:gap-8">
-          <div>
-            <h1 className="text-[clamp(1.7rem,3vw,2.5rem)] font-semibold leading-[1.06] tracking-display text-balance">
-              Send anything with a driver who’s already going there.
-            </h1>
-            <p className="mt-3 max-w-[54ch] text-[17px] leading-relaxed text-muted">
+        <div className="pb-3">
+          {/* one line from tablet width up: the headline gets the full width, the buttons sit with the sentence */}
+          <h1 className="text-[clamp(1.5rem,2.6vw,2.35rem)] font-semibold leading-[1.08] tracking-display text-balance md:whitespace-nowrap">
+            Send anything with a driver who’s already going there.
+          </h1>
+          <div className="mt-2 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+            <p className="max-w-[60ch] text-[16px] leading-snug text-muted">
               Post your item and where it needs to go. Drivers on that route bid to carry it, and you choose the offer that suits you.
             </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-3 sm:pb-1">
-            <Link href="/trips/new" className={`${PILL} border-line-strong hover:border-ink`}>
-              Post a trip
-            </Link>
-            <Link href="/requests/new" className={`${PILL} border-ink bg-ink text-paper`}>
-              Post a request
-            </Link>
+            <div className="flex shrink-0 items-center gap-3">
+              <Link href="/trips/new" className={`${PILL} border-line-strong hover:border-ink`}>
+                Post a trip
+              </Link>
+              <Link href="/requests/new" className={`${PILL} border-ink bg-ink text-paper`}>
+                Post a request
+              </Link>
+            </div>
           </div>
         </div>
       )}
