@@ -28,6 +28,7 @@ The homepage is a map of the United States with the number of open requests leav
 - Geography is static: `apps/web/public/map/us-states.json` (us-atlas, Census) and `us-cities.json` (Natural Earth populated places, public domain).
 - Activity comes from Supabase. Members read `delivery_requests` and `trips` directly (RLS). Visitors get `map_public_activity()`, a security-definer RPC (migration 9) that returns only rounded coordinates, pricing mode and clocks: no addresses, prices or people.
 - The drawing is d3 in `apps/web/src/lib/map/engine.ts`; the React shell is `apps/web/src/components/map/DeparturesMap.tsx`; styles in `apps/web/src/app/map.css`.
+- `demo_refill()` (migration 14, pg_cron every 10 minutes) keeps at least 36 open requests and 36 upcoming trips on the hosted map. Each new one takes a random route from `demo_routes` (73 real city pairs, repeats allowed) and a random item from `demo_items`; stale demo rows are retired. The targets live in `platform_settings` (`demo_target_requests`, `demo_target_trips`); set `demo_refill_enabled` to 0 to stop it.
 - `design/prototype/` is the standalone prototype the design was approved on, with sample data. Open `index.html` from any static server; it is not part of the app.
 - `supabase/seed_map_demo.sql` adds 30 demo requests and 6 trips around a few hubs so the map has something to show. Run it after `seed.sql`.
 
