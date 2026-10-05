@@ -2,6 +2,7 @@ export * from './database.types';
 export * from './types';
 export * from './constants';
 export * from './schemas';
+export * from './address';
 export * from './supabaseClient';
 export type { TripWithDriver } from './queries/trips';
 export type { BidWithDriver } from './queries/bids';

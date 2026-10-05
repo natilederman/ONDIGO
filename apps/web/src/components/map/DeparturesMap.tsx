@@ -3,11 +3,13 @@
 /**
  * The homepage: a map of the United States with the number of open requests
  * leaving each state. Open a state, press a city, and the list underneath
- * shows what leaves and arrives there. Visitors get counts and destinations;
- * members get items, prices and people.
+ * shows what leaves and arrives there, plus the rides that stay inside the
+ * city on a street map. Visitors get counts and destinations; members get
+ * items, prices, people and the street block at each end.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { requestQueries, tripQueries } from '@ondigo/shared';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/AuthProvider';
@@ -24,11 +26,18 @@ import {
 import { createEngine, type Bundle, type CityNode, type Engine, type ViewState } from '@/lib/map/engine';
 import { PlaceSearch } from './PlaceSearch';
 
+// Leaflet touches window on import, so the street map only loads in the browser
+const CityStreetMap = dynamic(() => import('./CityStreetMap').then((m) => m.CityStreetMap), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-ash" />,
+});
+
 type Selected = { item: MapItem; bundle?: undefined } | { bundle: Bundle; item?: undefined } | null;
 
 const LABEL = 'text-[11px] font-semibold uppercase tracking-[0.1em] text-steel';
 const PILL = 'inline-flex items-center whitespace-nowrap rounded-full border px-4 py-2 text-[12.5px] font-semibold transition-transform duration-150 ease-out active:scale-[0.97]';
 const cap = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
 export function DeparturesMap() {
   const { user, loading: authLoading } = useAuth();
@@ -246,14 +255,19 @@ function Bar({ selected, city, signedIn, onClose }: { selected: NonNullable<Sele
   if (selected.item) {
     const i = selected.item;
     const same = i.from.state === i.to.state;
-    head = <>{i.from.city}{same ? '' : `, ${i.from.state}`}{arrow}{i.to.city}{same ? '' : `, ${i.to.state}`}</>;
-    kind = i.kind === 'trip' ? 'Driver trip' : i.mode === 'auction' ? 'Auction' : 'Fixed price';
+    const streets = signedIn && i.fromText && i.toText;
+    head = i.local && streets
+      ? <>{i.fromText}{arrow}{i.toText}</>
+      : <>{i.from.city}{same ? '' : `, ${i.from.state}`}{arrow}{i.to.city}{same ? '' : `, ${i.to.state}`}</>;
+    kind = (i.kind === 'trip' ? 'Driver trip' : i.mode === 'auction' ? 'Auction' : 'Fixed price') + (i.local ? ` · within ${i.from.city}` : '');
+    // members see the block at each end of a long ride; the exact door goes to the matched driver only
+    const ends = streets && !i.local ? ` From the ${lower(i.fromText!)} to the ${lower(i.toText!)}.` : '';
     if (!signedIn) meta = <><b>Log in to see the details</b>{i.kind === 'trip' ? 'Who is driving and when they leave' : 'The item, the price and who is bidding'} are visible to members.</>;
     else if (i.kind === 'trip') {
-      meta = <><b>{i.driver}, {cap(i.vehicle)}</b>Departs {i.departAt ? departsIn(i.departAt) : 'soon'}. {same ? `Stays inside ${i.from.state}.` : `Crosses into ${i.to.state}.`}</>;
+      meta = <><b>{i.driver}, {cap(i.vehicle)}</b>Departs {i.departAt ? departsIn(i.departAt) : 'soon'}.{i.local ? ' A run across town.' : same ? ` Stays inside ${i.from.state}.` : ` Crosses into ${i.to.state}.`}{ends}</>;
       link = <Link href={`/trips/${i.id}`} className={`${PILL} border-ink bg-ink text-paper`}>Open trip</Link>;
     } else {
-      meta = <><b>{i.item}</b>{i.weightKg ? `${i.weightKg} kg. ` : ''}{same ? `Stays inside ${i.from.state}` : `Ends in ${i.to.city}, ${i.to.state}`}</>;
+      meta = <><b>{i.item}</b>{i.weightKg ? `${i.weightKg} kg. ` : ''}{i.local ? `Across ${i.from.city}. The exact address goes to the driver who wins it.` : same ? `Stays inside ${i.from.state}.` : `Ends in ${i.to.city}, ${i.to.state}.`}{ends}</>;
       price = (
         <div className="text-right">
           <div className="tnum text-[clamp(1.15rem,1.8vw,1.5rem)] font-semibold tracking-display">{typeof i.price === 'number' ? `$${i.price.toFixed(0)}` : ''}</div>
@@ -293,7 +307,7 @@ function Bar({ selected, city, signedIn, onClose }: { selected: NonNullable<Sele
   }
   return (
     <div className="grid grid-cols-[1fr_auto] items-center gap-x-6 gap-y-3 border-b border-line border-t-2 border-t-ink px-1 py-4 md:grid-cols-[1.6fr_1fr_auto_auto]">
-      <div className="text-[clamp(1.25rem,2.2vw,1.8rem)] font-semibold leading-[1.1] tracking-display">
+      <div className={`${selected.item?.local && signedIn ? 'text-[clamp(1.05rem,1.6vw,1.35rem)]' : 'text-[clamp(1.25rem,2.2vw,1.8rem)]'} font-semibold leading-[1.15] tracking-display`}>
         {head}
         <span className={`mt-1.5 block ${LABEL}`}>{kind}</span>
       </div>
@@ -346,25 +360,36 @@ const Sub = ({ children }: { children: React.ReactNode }) => <div className={`bo
 
 const rowCls = (compact: boolean | undefined, sel: boolean) =>
   `dm-row grid w-full grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-1 text-left ${compact ? 'py-3' : 'py-4 md:grid-cols-[1.6fr_1fr_96px_120px] md:gap-x-6'} ${sel ? 'border-b-2 border-ink' : 'border-b border-line'}`;
-const routeCls = (compact?: boolean) => `${compact ? 'col-span-2 row-start-1 text-[15px]' : 'text-[clamp(1.05rem,1.6vw,1.35rem)]'} font-semibold leading-[1.15] tracking-display`;
+// every cell is placed explicitly: auto-placement would slot the route after the price on a phone
+const routeCls = (compact?: boolean) => `${compact ? 'col-span-2 row-start-1 text-[15px]' : 'col-start-1 row-start-1 md:col-start-auto md:row-start-auto text-[clamp(1.05rem,1.6vw,1.35rem)]'} font-semibold leading-[1.15] tracking-display`;
 // narrow column: route on its own line, then the item on the left with price over status on the right
 const cell = (compact: boolean | undefined, which: 'item' | 'price' | 'status', wideCls: string) =>
   compact
     ? { item: 'col-start-1 row-start-2 row-span-2 self-start', price: 'col-start-2 row-start-2', status: 'col-start-2 row-start-3' }[which]
     : wideCls;
 
-function Row({ item, sel, onClick, compact }: { item: MapItem; sel: boolean; onClick: () => void; compact?: boolean }) {
+function Row({ item, sel, onClick, compact, inCity }: { item: MapItem; sel: boolean; onClick: () => void; compact?: boolean; inCity?: boolean }) {
   const same = item.from.state === item.to.state;
   const isTrip = item.kind === 'trip';
+  const arrow = <span aria-hidden className="mx-1.5 font-normal text-steel">&#8594;</span>;
+  const tag = 'ml-1.5 text-[.68em] font-semibold tracking-[0.06em] text-steel';
   return (
     <button type="button" onClick={onClick} className={rowCls(compact, sel)}>
-      <div className={routeCls(compact)}>
-        {item.from.city}<span aria-hidden className="mx-1.5 font-normal text-steel">&#8594;</span>{item.to.city}
-        {!same && <span className="ml-1.5 text-[.68em] font-semibold tracking-[0.06em] text-steel">{item.to.state}</span>}
-      </div>
-      <div className={`text-muted ${compact ? 'text-[13px]' : 'text-[14px]'} ${cell(compact, 'item', 'row-start-2 md:row-start-auto')}`}>{isTrip ? `${item.driver}, ${cap(item.vehicle)}` : item.item}</div>
-      <div className={`tnum text-right font-semibold tracking-display ${compact ? 'text-[15px]' : 'text-[1.05rem]'} ${cell(compact, 'price', 'row-start-1 md:row-start-auto')}`}>{!isTrip && typeof item.price === 'number' ? `$${item.price.toFixed(0)}` : ''}</div>
-      <div className={`text-right text-[12.5px] font-semibold ${cell(compact, 'status', 'row-start-2 md:row-start-auto')}`}>
+      {item.local && item.fromText ? (
+        // inside one city the streets are the route; the city name is only needed outside its own list
+        <div className={`${routeCls(compact)} ${compact ? '' : '!text-[clamp(.98rem,1.3vw,1.12rem)]'}`}>
+          {item.fromText}{arrow}{item.toText}
+          {!inCity && <span className={`${tag} whitespace-nowrap`}>{item.from.city.toUpperCase()}</span>}
+        </div>
+      ) : (
+        <div className={routeCls(compact)}>
+          {item.from.city}{arrow}{item.to.city}
+          {!same && <span className={tag}>{item.to.state}</span>}
+        </div>
+      )}
+      <div className={`text-muted ${compact ? 'text-[13px]' : 'text-[14px]'} ${cell(compact, 'item', 'col-start-1 row-start-2 md:col-start-auto md:row-start-auto')}`}>{isTrip ? `${item.driver}, ${cap(item.vehicle)}` : item.item}</div>
+      <div className={`tnum text-right font-semibold tracking-display ${compact ? 'text-[15px]' : 'text-[1.05rem]'} ${cell(compact, 'price', 'col-start-2 row-start-1 md:col-start-auto md:row-start-auto')}`}>{!isTrip && typeof item.price === 'number' ? `$${item.price.toFixed(0)}` : ''}</div>
+      <div className={`text-right text-[12.5px] font-semibold ${cell(compact, 'status', 'col-start-2 row-start-2 md:col-start-auto md:row-start-auto')}`}>
         {isTrip ? (
           <>{item.departAt ? cap(departsIn(item.departAt)) : ''}<small className={`block ${LABEL} mt-0.5`}>Departs</small></>
         ) : item.mode === 'auction' && item.endsAt ? (
@@ -387,9 +412,9 @@ function BundleRow({ b, city, out, sel, onClick, compact }: { b: Bundle; city: C
         {out ? city.name : b.other.city}<span aria-hidden className="mx-1.5 font-normal text-steel">&#8594;</span>{out ? b.other.city : city.name}
         {!same && <span className="ml-1.5 text-[.68em] font-semibold tracking-[0.06em] text-steel">{b.other.state}</span>}
       </div>
-      <div className={`text-muted ${compact ? 'text-[13px]' : 'text-[14px]'} ${cell(compact, 'item', 'row-start-2 md:row-start-auto')}`}>{au ? `${au} in auction` : 'Fixed price'}</div>
-      <div className={`tnum text-right font-semibold tracking-display ${compact ? 'text-[15px]' : 'text-[1.05rem]'} ${cell(compact, 'price', 'row-start-1 md:row-start-auto')}`}>&times;{mine.length}</div>
-      <div className={`text-right ${cell(compact, 'status', 'row-start-2 md:row-start-auto')} ${LABEL}`}>Log in for prices</div>
+      <div className={`text-muted ${compact ? 'text-[13px]' : 'text-[14px]'} ${cell(compact, 'item', 'col-start-1 row-start-2 md:col-start-auto md:row-start-auto')}`}>{au ? `${au} in auction` : 'Fixed price'}</div>
+      <div className={`tnum text-right font-semibold tracking-display ${compact ? 'text-[15px]' : 'text-[1.05rem]'} ${cell(compact, 'price', 'col-start-2 row-start-1 md:col-start-auto md:row-start-auto')}`}>&times;{mine.length}</div>
+      <div className={`text-right ${cell(compact, 'status', 'col-start-2 row-start-2 md:col-start-auto md:row-start-auto')} ${LABEL}`}>Log in for prices</div>
     </button>
   );
 }
@@ -413,13 +438,41 @@ function Under({ view, items, signedIn, requestsTotal, statesActive, selected, o
   const c = view.city;
   if (c) {
     const back = <button type="button" onClick={onBack} className={`${PILL} shrink-0 border-line-strong text-muted ${compact ? '!px-3 !py-1.5 !text-[12px]' : ''}`}>{compact ? 'Close' : `All of ${st.name}`}</button>;
-    const aside = `${c.n} ${c.n === 1 ? 'request' : 'requests'}, ${c.trips.length} driver ${c.trips.length === 1 ? 'trip' : 'trips'}`;
-    if (!c.n && !c.trips.length)
+    const tripsN = c.trips.length + c.local.filter((i) => i.kind === 'trip').length;
+    const aside = `${c.n} ${c.n === 1 ? 'request' : 'requests'}, ${tripsN} driver ${tripsN === 1 ? 'trip' : 'trips'}`;
+    const localN = c.local.length;
+    const within = localN > 0 && (
+      <>
+        <Sub>Within {c.name}</Sub>
+        {signedIn ? (
+          <>
+            <div className="px-1 pt-3">
+              <CityStreetMap
+                key={c.key}
+                items={c.local}
+                center={[c.lat, c.lng]}
+                selectedId={selected?.item?.id}
+                onPick={onItem}
+                height={compact ? 210 : 300}
+              />
+              <p className="mt-1.5 text-[11.5px] text-steel">Dot is the pickup, ring is the drop-off. Pins mark the block, not the door.</p>
+            </div>
+            {[...c.local].sort((a, b) => Number(a.kind === 'trip') - Number(b.kind === 'trip')).map((i) => <Row compact={compact} inCity key={i.id} item={i} sel={selId === i.id} onClick={() => onItem(i)} />)}
+          </>
+        ) : (
+          <p className="px-1 py-4 text-[14.5px] text-muted">
+            {localN} {localN === 1 ? 'ride starts and ends' : 'rides start and end'} inside {c.name}. Log in to see the streets on a map.
+          </p>
+        )}
+      </>
+    );
+    if (!c.n && !c.trips.length && !localN)
       return (<><Head compact={compact} title={c.name} aside={aside}>{back}</Head><p className="px-1 py-5 text-[14.5px] text-muted">Nothing leaves or arrives in {c.name} yet.</p></>);
     if (signedIn)
       return (
         <>
           <Head compact={compact} title={c.name} aside={aside}>{back}</Head>
+          {within}
           {c.leaving.length > 0 && <><Sub>Leaving</Sub>{c.leaving.map((i) => <Row compact={compact} key={i.id} item={i} sel={selId === i.id} onClick={() => onItem(i)} />)}</>}
           {c.arriving.length > 0 && <><Sub>Arriving</Sub>{c.arriving.map((i) => <Row compact={compact} key={i.id} item={i} sel={selId === i.id} onClick={() => onItem(i)} />)}</>}
           {c.trips.length > 0 && <><Sub>Drivers passing through</Sub>{c.trips.map((i) => <Row compact={compact} key={i.id} item={i} sel={selId === i.id} onClick={() => onItem(i)} />)}</>}
@@ -430,6 +483,7 @@ function Under({ view, items, signedIn, requestsTotal, statesActive, selected, o
     return (
       <>
         <Head compact={compact} title={c.name} aside={aside}>{back}</Head>
+        {within}
         {outB.length > 0 && <><Sub>Leaving</Sub>{outB.map((b) => <BundleRow compact={compact} key={b.id} b={b} city={c} out sel={selId === b.id} onClick={() => onBundle(b)} />)}</>}
         {inB.length > 0 && <><Sub>Arriving</Sub>{inB.map((b) => <BundleRow compact={compact} key={'in' + b.id} b={b} city={c} out={false} sel={selId === b.id} onClick={() => onBundle(b)} />)}</>}
         {c.trips.length > 0 && <><Sub>Drivers passing through</Sub><p className="px-1 py-4 text-[14.5px] text-muted">{c.trips.length} driver {c.trips.length === 1 ? 'trip touches' : 'trips touch'} {c.name}. Log in to see who and when.</p></>}

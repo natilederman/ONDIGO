@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { blockLabel } from '@ondigo/shared';
 import { searchPlaces, type PlaceResult } from '@/lib/geocode';
 import { Input, Textarea } from './Input';
 
@@ -43,10 +44,13 @@ const HANDOFF_COPY = {
   },
 } as const;
 
-/** What gets written to the public request row: precise enough to price the job. */
+/**
+ * What gets written to the public request row: the block, the city and the
+ * state, e.g. "1200 block of Valencia St, San Francisco, CA". Enough to judge
+ * and price the job. The exact street line is saved privately for the driver.
+ */
 export function formatAddressLine(v: AddressValue): string {
-  const city = v.place?.city;
-  return [v.line1.trim(), city].filter(Boolean).join(', ') || (v.place?.label ?? '');
+  return blockLabel(v.line1, v.place?.city, v.place?.state) || (v.place?.label ?? '');
 }
 
 export function AddressFields({

@@ -16,6 +16,8 @@ export interface CityNode extends City {
   leaving: MapItem[];
   arriving: MapItem[];
   trips: MapItem[];
+  /** rides with both ends in this city: listed and shown on its street map, never drawn as lines */
+  local: MapItem[];
   n: number;
 }
 
@@ -117,28 +119,30 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
   const tripsOf = (ab: string) => trips.filter((t) => t.fromSt === ab || t.toSt === ab);
 
   // cities: known places plus any endpoint we do not know, lit when something touches them
-  const cities: CityNode[] = data.cities.map((c) => ({ ...c, xy: [0, 0], lit: false, leaving: [], arriving: [], trips: [], n: 0 }));
+  const cities: CityNode[] = data.cities.map((c) => ({ ...c, xy: [0, 0], lit: false, leaving: [], arriving: [], trips: [], local: [], n: 0 }));
   const have = new Set(cities.map((c) => c.key));
   items.forEach((i) =>
     [i.from, i.to].forEach((e) => {
       if (!have.has(e.key)) {
         have.add(e.key);
-        cities.push({ state: e.state, name: e.city, lat: e.lat, lng: e.lng, pop: 60000, key: e.key, xy: [0, 0], lit: false, leaving: [], arriving: [], trips: [], n: 0 });
+        cities.push({ state: e.state, name: e.city, lat: e.lat, lng: e.lng, pop: 60000, key: e.key, xy: [0, 0], lit: false, leaving: [], arriving: [], trips: [], local: [], n: 0 });
       }
     })
   );
   const byKey = new Map(cities.map((c) => [c.key, c]));
-  requests.forEach((r) => {
-    byKey.get(r.from.key)?.leaving.push(r);
-    byKey.get(r.to.key)?.arriving.push(r);
-  });
-  trips.forEach((t) => {
-    byKey.get(t.from.key)?.trips.push(t);
-    if (t.to.key !== t.from.key) byKey.get(t.to.key)?.trips.push(t);
+  items.forEach((i) => {
+    if (i.local) byKey.get(i.from.key)?.local.push(i);
+    else if (i.kind === 'request') {
+      byKey.get(i.from.key)?.leaving.push(i);
+      byKey.get(i.to.key)?.arriving.push(i);
+    } else {
+      byKey.get(i.from.key)?.trips.push(i);
+      byKey.get(i.to.key)?.trips.push(i);
+    }
   });
   cities.forEach((c) => {
-    c.n = c.leaving.length + c.arriving.length;
-    c.lit = c.n > 0 || c.trips.length > 0;
+    c.n = c.leaving.length + c.arriving.length + c.local.filter((i) => i.kind === 'request').length;
+    c.lit = c.n > 0 || c.trips.length > 0 || c.local.length > 0;
   });
   const cityList = cities
     .map((c) => ({ c, xy: projection([c.lng, c.lat]) }))
@@ -735,7 +739,11 @@ export function createEngine(svgEl: SVGSVGElement, data: MapData, opts: EngineOp
   function hintFor(): ViewState['hint'] {
     const how = isPhone() ? 'Pinch' : 'Pinch or Ctrl+scroll';
     if (level === 'country') return { text: `${how} for more towns. Press a state, or search for a place.` };
-    if (city) return { strong: city.name, text: `: ${bundles.length} ${bundles.length === 1 ? 'connection' : 'connections'} drawn; press the state or Esc to clear.` };
+    if (city) {
+      const lc = city.local.length;
+      const within = lc ? `, ${lc} ${lc === 1 ? 'ride' : 'rides'} inside the city` : '';
+      return { strong: city.name, text: `: ${bundles.length} ${bundles.length === 1 ? 'connection' : 'connections'} drawn${within}; press the state or Esc to clear.` };
+    }
     const n = cityEls.filter((e) => e.c.n).length;
     return n
       ? { strong: `${n} ${n === 1 ? 'city has' : 'cities have'} deliveries`, text: `; press one to see what leaves and arrives, or click outside the state for all states.` }

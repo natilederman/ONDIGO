@@ -91,3 +91,16 @@
   .dm-hover { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .dm-sheet { animation: none; } .dm-st, .dm-cityg, .dm-city, .dm-route, .dm-bcount, .dm-hover { transition-duration: .01ms; } }
+
+/* street map of one city: pickup dot, drop-off ring, a thin line between */
+/* Leaflet panes carry z-index 400+; isolating the map keeps them under the sticky header */
+.dm-streets { isolation: isolate; z-index: 0; }
+.dm-streets .dm-sp { --c: var(--ink); transition: opacity 160ms ease; }
+.dm-streets .dm-sp.trip { --c: var(--steel); }
+.dm-streets .dm-sp.sel { --c: var(--signal); }
+.dm-streets .dm-sp.line { stroke: var(--c); stroke-opacity: .8; fill: none; }
+.dm-streets .dm-sp.pick { stroke: var(--paper); fill: var(--c); }
+.dm-streets .dm-sp.drop { stroke: var(--c); fill: var(--paper); }
+.dm-streets .dm-sp.dim { opacity: .3; }
+.dm-streets .leaflet-tooltip { border-radius: 0; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); box-shadow: none; font-size: 12px; padding: 4px 8px; }
+.dm-streets .leaflet-tooltip-top::before { border-top-color: var(--ink); }

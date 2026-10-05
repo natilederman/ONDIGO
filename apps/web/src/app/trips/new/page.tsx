@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { tripQueries, postTripSchema, VEHICLE_TYPES, type VehicleType } from '@ondigo/shared';
+import { tripQueries, postTripSchema, VEHICLE_TYPES, blockLabel, roundCoord, type VehicleType } from '@ondigo/shared';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { Card } from '@/components/Card';
@@ -10,6 +10,9 @@ import { Input, Select, Textarea } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { LocationInput } from '@/components/LocationInput';
 import type { PlaceResult } from '@/lib/geocode';
+
+/** A trip is listed by block and city, like a request: "300 block of King St, San Francisco, CA". */
+const publicPlace = (p: PlaceResult) => (p.city ? blockLabel(p.line1 ?? '', p.city, p.state) : p.label);
 
 export default function NewTripPage() {
   const { user, loading: authLoading } = useRequireAuth();
@@ -35,12 +38,12 @@ export default function NewTripPage() {
       return;
     }
     const input = {
-      originText: origin.label,
-      originLat: origin.lat,
-      originLng: origin.lng,
-      destinationText: destination.label,
-      destinationLat: destination.lat,
-      destinationLng: destination.lng,
+      originText: publicPlace(origin),
+      originLat: roundCoord(origin.lat),
+      originLng: roundCoord(origin.lng),
+      destinationText: publicPlace(destination),
+      destinationLat: roundCoord(destination.lat),
+      destinationLng: roundCoord(destination.lng),
       departAt,
       vehicleType,
       capacityWeightKg: Number(capacityWeightKg),

@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Platform } from 'react-native';
 import { router } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { tripQueries, postTripSchema, VEHICLE_TYPES, type VehicleType } from '@ondigo/shared';
+import { tripQueries, postTripSchema, VEHICLE_TYPES, roundCoord, type VehicleType } from '@ondigo/shared';
 import { getSupabaseClient } from '../../../src/lib/supabaseClient';
 import { useAuth } from '../../../src/lib/AuthProvider';
 import { Input } from '../../../src/components/Input';
 import { Button } from '../../../src/components/Button';
 import { LocationInput } from '../../../src/components/LocationInput';
-import type { PlaceResult } from '../../../src/lib/geocode';
+import { publicPlace, type PlaceResult } from '../../../src/lib/geocode';
 import { colors, radius } from '../../../src/lib/theme';
 
 export default function NewTripScreen() {
@@ -34,12 +34,12 @@ export default function NewTripScreen() {
       return;
     }
     const input = {
-      originText: origin.label,
-      originLat: origin.lat,
-      originLng: origin.lng,
-      destinationText: destination.label,
-      destinationLat: destination.lat,
-      destinationLng: destination.lng,
+      originText: publicPlace(origin),
+      originLat: roundCoord(origin.lat),
+      originLng: roundCoord(origin.lng),
+      destinationText: publicPlace(destination),
+      destinationLat: roundCoord(destination.lat),
+      destinationLng: roundCoord(destination.lng),
       departAt: departAt.toISOString(),
       vehicleType,
       capacityWeightKg: Number(capacityWeightKg),

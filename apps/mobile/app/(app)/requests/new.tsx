@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Platform } from 'react-native';
 import { router } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { requestQueries, postRequestSchema, type PricingMode } from '@ondigo/shared';
+import { requestQueries, postRequestSchema, roundCoord, type PricingMode } from '@ondigo/shared';
 import { getSupabaseClient } from '../../../src/lib/supabaseClient';
 import { useAuth } from '../../../src/lib/AuthProvider';
 import { Input } from '../../../src/components/Input';
 import { Button } from '../../../src/components/Button';
 import { LocationInput } from '../../../src/components/LocationInput';
 import { LegalDeclaration } from '../../../src/components/LegalDeclaration';
-import type { PlaceResult } from '../../../src/lib/geocode';
+import { publicPlace, type PlaceResult } from '../../../src/lib/geocode';
 import { colors, radius } from '../../../src/lib/theme';
 
 export default function NewRequestScreen() {
@@ -47,12 +47,13 @@ export default function NewRequestScreen() {
       itemDescription,
       itemSize,
       itemWeightKg: Number(itemWeightKg),
-      pickupText: pickup.label,
-      pickupLat: pickup.lat,
-      pickupLng: pickup.lng,
-      dropoffText: dropoff.label,
-      dropoffLat: dropoff.lat,
-      dropoffLng: dropoff.lng,
+      // members see the block; the exact street line is saved privately for the matched driver
+      pickupText: publicPlace(pickup),
+      pickupLat: roundCoord(pickup.lat),
+      pickupLng: roundCoord(pickup.lng),
+      dropoffText: publicPlace(dropoff),
+      dropoffLat: roundCoord(dropoff.lat),
+      dropoffLng: roundCoord(dropoff.lng),
       neededBy: neededBy.toISOString().slice(0, 10),
       pricingMode,
       fixedPrice: pricingMode === 'fixed' ? Number(fixedPrice) : undefined,
@@ -89,6 +90,8 @@ export default function NewRequestScreen() {
         extend_seconds: parsed.data.extendSeconds,
         legal_declaration_accepted: parsed.data.legalDeclarationAccepted,
       });
+      if (pickup.line1 || dropoff.line1)
+        await requestQueries.saveContactDetails(client, created.id, { pickup_line1: pickup.line1 ?? null, dropoff_line1: dropoff.line1 ?? null });
       router.replace(`/(app)/requests/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not post request');

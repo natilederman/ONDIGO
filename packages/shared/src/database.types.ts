@@ -366,6 +366,149 @@ export type Database = {
           },
         ]
       }
+      demo_drivers: {
+        Row: {
+          capacity_kg: number
+          capacity_size: string
+          driver_id: string
+          vehicle: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Insert: {
+          capacity_kg: number
+          capacity_size: string
+          driver_id: string
+          vehicle: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Update: {
+          capacity_kg?: number
+          capacity_size?: string
+          driver_id?: string
+          vehicle?: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_drivers_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_items: {
+        Row: {
+          category: Database["public"]["Enums"]["item_category"]
+          fragile: boolean
+          id: number
+          item: string
+          size: string
+          value: number
+          weight_kg: number
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["item_category"]
+          fragile?: boolean
+          id?: number
+          item: string
+          size: string
+          value: number
+          weight_kg: number
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["item_category"]
+          fragile?: boolean
+          id?: number
+          item?: string
+          size?: string
+          value?: number
+          weight_kg?: number
+        }
+        Relationships: []
+      }
+      demo_metros: {
+        Row: {
+          city: string
+          state: string
+          weight: number
+        }
+        Insert: {
+          city: string
+          state: string
+          weight: number
+        }
+        Update: {
+          city?: string
+          state?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      demo_places: {
+        Row: {
+          block: string
+          city: string
+          id: number
+          lat: number
+          line1: string
+          lng: number
+          state: string
+        }
+        Insert: {
+          block: string
+          city: string
+          id?: number
+          lat: number
+          line1: string
+          lng: number
+          state: string
+        }
+        Update: {
+          block?: string
+          city?: string
+          id?: number
+          lat?: number
+          line1?: string
+          lng?: number
+          state?: string
+        }
+        Relationships: []
+      }
+      demo_routes: {
+        Row: {
+          from_city: string
+          from_lat: number
+          from_lng: number
+          from_state: string
+          id: number
+          to_city: string
+          to_lat: number
+          to_lng: number
+          to_state: string
+        }
+        Insert: {
+          from_city: string
+          from_lat: number
+          from_lng: number
+          from_state: string
+          id?: number
+          to_city: string
+          to_lat: number
+          to_lng: number
+          to_state: string
+        }
+        Update: {
+          from_city?: string
+          from_lat?: number
+          from_lng?: number
+          from_state?: string
+          id?: number
+          to_city?: string
+          to_lat?: number
+          to_lng?: number
+          to_state?: string
+        }
+        Relationships: []
+      }
       location_pings: {
         Row: {
           delivery_id: string
@@ -678,11 +821,13 @@ export type Database = {
           dropoff_contact_name: string | null
           dropoff_contact_phone: string | null
           dropoff_instructions: string | null
+          dropoff_line1: string | null
           dropoff_line2: string | null
           dropoff_postcode: string | null
           pickup_contact_name: string | null
           pickup_contact_phone: string | null
           pickup_instructions: string | null
+          pickup_line1: string | null
           pickup_line2: string | null
           pickup_postcode: string | null
           request_id: string
@@ -693,11 +838,13 @@ export type Database = {
           dropoff_contact_name?: string | null
           dropoff_contact_phone?: string | null
           dropoff_instructions?: string | null
+          dropoff_line1?: string | null
           dropoff_line2?: string | null
           dropoff_postcode?: string | null
           pickup_contact_name?: string | null
           pickup_contact_phone?: string | null
           pickup_instructions?: string | null
+          pickup_line1?: string | null
           pickup_line2?: string | null
           pickup_postcode?: string | null
           request_id: string
@@ -708,11 +855,13 @@ export type Database = {
           dropoff_contact_name?: string | null
           dropoff_contact_phone?: string | null
           dropoff_instructions?: string | null
+          dropoff_line1?: string | null
           dropoff_line2?: string | null
           dropoff_postcode?: string | null
           pickup_contact_name?: string | null
           pickup_contact_phone?: string | null
           pickup_instructions?: string | null
+          pickup_line1?: string | null
           pickup_line2?: string | null
           pickup_postcode?: string | null
           request_id?: string
@@ -1217,6 +1366,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      demo_km: {
+        Args: { a_lat: number; a_lng: number; b_lat: number; b_lng: number }
+        Returns: number
+      }
+      demo_price: {
+        Args: { p_band: string; p_kg: number; p_km: number; p_size: string }
+        Returns: number
+      }
+      demo_refill: { Args: never; Returns: Json }
       fund_escrow: {
         Args: { p_delivery_id: string }
         Returns: {
@@ -1282,6 +1440,20 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      public_delivery_record: {
+        Args: { p_user: string }
+        Returns: {
+          category: Database["public"]["Enums"]["item_category"]
+          completed_at: string
+          delivery_id: string
+          dlat: number
+          dlng: number
+          plat: number
+          plng: number
+          rating: number
+          role: string
+        }[]
       }
       purge_expired_verification_documents: { Args: never; Returns: number }
       recompute_verification_tier: {

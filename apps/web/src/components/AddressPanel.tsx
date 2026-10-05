@@ -88,8 +88,8 @@ export function AddressPanel({
         // entitled and when the sender simply left these blank, so the copy
         // states the rule rather than guessing which case this is.
         <p className="mt-3 text-[12.5px] leading-relaxed text-steel">
-          No apartment, contact or access notes on file. These are visible to the sender and to the
-          driver carrying the job.
+          Shown to the block only. The exact street number, apartment, contact and access notes are
+          visible to the sender and to the driver carrying the job.
         </p>
       )}
     </div>

@@ -23,12 +23,15 @@ Sign-up stays a one-minute act; the expensive check happens at the bid. `profile
 
 ## Homepage map
 
-The homepage is a map of the United States with the number of open requests leaving each state. Open a state, press a city, and the list underneath shows what leaves and arrives there.
+The homepage is a map of the United States with the number of open requests leaving each state. Open a state, press a city, and the list underneath shows what leaves and arrives there, plus the rides that stay inside the city.
 
 - Geography is static: `apps/web/public/map/us-states.json` (us-atlas, Census) and `us-cities.json` (Natural Earth populated places, public domain).
 - Activity comes from Supabase. Members read `delivery_requests` and `trips` directly (RLS). Visitors get `map_public_activity()`, a security-definer RPC (migration 9) that returns only rounded coordinates, pricing mode and clocks: no addresses, prices or people.
 - The drawing is d3 in `apps/web/src/lib/map/engine.ts`; the React shell is `apps/web/src/components/map/DeparturesMap.tsx`; styles in `apps/web/src/app/map.css`.
-- `demo_refill()` (migration 14, pg_cron every 10 minutes) keeps at least 36 open requests and 36 upcoming trips on the hosted map. Each new one takes a random route from `demo_routes` (73 real city pairs, repeats allowed) and a random item from `demo_items`; stale demo rows are retired. The targets live in `platform_settings` (`demo_target_requests`, `demo_target_trips`); set `demo_refill_enabled` to 0 to stop it.
+- Rides are street to street. A ride with both ends within 25 km is *in-city*: it is listed under its city ("Within San Francisco") and, for members, drawn on a Leaflet street map (`CityStreetMap.tsx`) with a pickup dot and a drop-off ring. Longer rides keep their lines on the state map.
+- Address privacy: members see the block (`1200 block of Valencia St, San Francisco, CA`, from `blockLabel` in `packages/shared/src/address.ts`) and coordinates rounded to three decimals. The exact street line is stored in `request_contact_details.pickup_line1` / `dropoff_line1` and reaches only the sender and the matched driver. Visitors see the city only.
+- Prices come in three bands by distance, then move with size and weight: inside a city $15 to $60, city to city in one state $60 to $180, across a state line $150 to $600 (more for bulky items). See `demo_price()` in migration 15.
+- `demo_refill()` (migration 15, pg_cron every 10 minutes) keeps 30 long rides and 30 in-city rides open, for requests and for trips. Long rides take a route from `demo_routes` (mostly across a state line; `demo_same_state_share` of them stay inside one, e.g. Los Angeles to San Francisco). In-city rides pick a city from `demo_metros` (weighted by size) and two addresses in it. Every end is a real public business address from OpenStreetMap in `demo_places`. Targets: `demo_long_requests`, `demo_local_requests`, `demo_long_trips`, `demo_local_trips`; set `demo_refill_enabled` to 0 to stop it.
 - `design/prototype/` is the standalone prototype the design was approved on, with sample data. Open `index.html` from any static server; it is not part of the app.
 - `supabase/seed_map_demo.sql` adds 30 demo requests and 6 trips around a few hubs so the map has something to show. Run it after `seed.sql`.
 

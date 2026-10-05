@@ -14,6 +14,7 @@ import {
   type DeliveryRequest,
   type BidWithDriver,
   type RequestContactDetails,
+  afterStreet,
 } from '@ondigo/shared';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import { useRequireAuth } from '@/lib/useRequireAuth';
@@ -188,7 +189,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
           <AddressPanel
             title="Pickup"
             end="pickup"
-            line1={request.pickup_text}
+            line1={contact?.pickup_line1 ? `${contact.pickup_line1}, ${afterStreet(request.pickup_text)}` : request.pickup_text}
             line2={contact?.pickup_line2}
             postcode={contact?.pickup_postcode}
             name={contact?.pickup_contact_name}
@@ -201,7 +202,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
           <AddressPanel
             title="Drop-off"
             end="dropoff"
-            line1={request.dropoff_text}
+            line1={contact?.dropoff_line1 ? `${contact.dropoff_line1}, ${afterStreet(request.dropoff_text)}` : request.dropoff_text}
             line2={contact?.dropoff_line2}
             postcode={contact?.dropoff_postcode}
             name={contact?.dropoff_contact_name}

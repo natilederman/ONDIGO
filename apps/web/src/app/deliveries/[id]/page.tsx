@@ -12,6 +12,7 @@ import {
   type Transaction,
   type LocationPing,
   type RequestContactDetails,
+  afterStreet,
 } from '@ondigo/shared';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import { useRequireAuth } from '@/lib/useRequireAuth';
@@ -168,7 +169,7 @@ export default function DeliveryDetailPage({ params }: { params: Promise<{ id: s
             end="pickup"
             handoff={request.pickup_handoff}
             when={formatWindow(request.pickup_from, request.pickup_until, request.needed_by)}
-            line1={request.pickup_text}
+            line1={contact?.pickup_line1 ? `${contact.pickup_line1}, ${afterStreet(request.pickup_text)}` : request.pickup_text}
             line2={contact?.pickup_line2}
             postcode={contact?.pickup_postcode}
             name={contact?.pickup_contact_name}
@@ -181,7 +182,7 @@ export default function DeliveryDetailPage({ params }: { params: Promise<{ id: s
             end="dropoff"
             handoff={request.dropoff_handoff}
             when={`By ${formatDeadline(request.deliver_by, request.needed_by)}`}
-            line1={request.dropoff_text}
+            line1={contact?.dropoff_line1 ? `${contact.dropoff_line1}, ${afterStreet(request.dropoff_text)}` : request.dropoff_text}
             line2={contact?.dropoff_line2}
             postcode={contact?.dropoff_postcode}
             name={contact?.dropoff_contact_name}

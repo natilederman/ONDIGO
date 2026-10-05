@@ -6,6 +6,8 @@ export interface PlaceResult {
   line1?: string;
   postcode?: string;
   city?: string;
+  /** Two-letter state, e.g. "CA". */
+  state?: string;
   /** True when the match resolves to a building, not just a town or region. */
   precise: boolean;
 }
@@ -35,6 +37,7 @@ function toPlace(d: NominatimResult): PlaceResult {
     line1,
     postcode: a.postcode,
     city,
+    state: a['ISO3166-2-lvl4']?.replace(/^US-/, '') || undefined,
     // A street-level result is one that carries a road; a bare town does not.
     precise: Boolean(road) || PRECISE_TYPES.has(d.addresstype ?? d.type ?? ''),
   };

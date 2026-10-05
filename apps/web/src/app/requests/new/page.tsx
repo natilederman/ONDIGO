@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { requestQueries, verificationQueries, postRequestSchema, ITEM_CATEGORIES, vehicleClassForWeight, type PricingMode, type ItemCategory } from '@ondigo/shared';
+import { requestQueries, verificationQueries, postRequestSchema, roundCoord, ITEM_CATEGORIES, vehicleClassForWeight, type PricingMode, type ItemCategory } from '@ondigo/shared';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { Card } from '@/components/Card';
@@ -93,11 +93,12 @@ export default function NewRequestPage() {
       contents,
       openBoxRequired: openBox,
       pickupText: formatAddressLine(pickup),
-      pickupLat: pickup.place.lat,
-      pickupLng: pickup.place.lng,
+      // published to about a block; the exact street line goes only to the matched driver
+      pickupLat: roundCoord(pickup.place.lat),
+      pickupLng: roundCoord(pickup.place.lng),
       dropoffText: formatAddressLine(dropoff),
-      dropoffLat: dropoff.place.lat,
-      dropoffLng: dropoff.place.lng,
+      dropoffLat: roundCoord(dropoff.place.lat),
+      dropoffLng: roundCoord(dropoff.place.lng),
       neededBy,
       pickupFrom,
       pickupUntil,
@@ -155,11 +156,13 @@ export default function NewRequestPage() {
 
       // The precise parts go to the private table, never onto the public request.
       await requestQueries.saveContactDetails(client, created.id, {
+        pickup_line1: pickup.line1.trim() || null,
         pickup_line2: pickup.line2 || null,
         pickup_postcode: pickup.postcode || null,
         pickup_contact_name: pickup.contactName || null,
         pickup_contact_phone: pickup.contactPhone || null,
         pickup_instructions: pickup.instructions || null,
+        dropoff_line1: dropoff.line1.trim() || null,
         dropoff_line2: dropoff.line2 || null,
         dropoff_postcode: dropoff.postcode || null,
         dropoff_contact_name: dropoff.contactName || null,

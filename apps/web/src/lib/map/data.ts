@@ -5,8 +5,11 @@
  * Census) and 769 populated places with population (Natural Earth). Activity
  * comes from Supabase in one of two shapes: full rows for members, or the
  * address-free `map_public_activity` RPC for visitors. Both are normalised to
- * MapItem, whose endpoints are snapped to the nearest known place so the map
- * only ever labels a city, never a street.
+ * MapItem, whose endpoints are snapped to the nearest known place so the
+ * country map only ever labels a city. A ride whose two ends are in the same
+ * city is `local`: it is listed under that city and drawn on a street map
+ * instead of as a line. Members also get the block-level street text and the
+ * points behind it; visitors get neither.
  */
 import { geoDistance } from 'd3';
 import type { DeliveryRequest } from '@ondigo/shared';
@@ -33,11 +36,23 @@ export interface Endpoint {
   key: string;
 }
 
+export interface Point {
+  lat: number;
+  lng: number;
+}
+
 export interface MapItem {
   id: string;
   kind: 'request' | 'trip';
   from: Endpoint;
   to: Endpoint;
+  /** both ends in one city: listed under it, never drawn as a line */
+  local: boolean;
+  /** members only: the published points (about a block) and their street text */
+  fromPt?: Point;
+  toPt?: Point;
+  fromText?: string;
+  toText?: string;
   /** requests */
   mode?: 'fixed' | 'auction';
   price?: number | null;
@@ -102,6 +117,19 @@ export function snap(cities: City[], lat: number, lng: number): Endpoint {
   return { lat: c.lat, lng: c.lng, city: c.name, state: c.state, key: c.key };
 }
 
+/** Within this distance two ends count as one city, so a ride from downtown to a suburb stays local. The demo refill uses the same line. */
+const LOCAL_KM = 25;
+
+function ends(cities: City[], aLat: number, aLng: number, bLat: number, bLng: number) {
+  const from = snap(cities, aLat, aLng);
+  const km = geoDistance([aLng, aLat], [bLng, bLat]) * 6371;
+  const local = km < LOCAL_KM;
+  return { from, to: local ? from : snap(cities, bLat, bLng), local };
+}
+
+/** "1200 block of Valencia St, San Francisco, CA" → "1200 block of Valencia St" */
+const streetPart = (text: string) => text.split(',')[0].trim();
+
 type PublicRequest = { id: string; plat: number; plng: number; dlat: number; dlng: number; mode: 'fixed' | 'auction'; ends_at: string | null };
 type PublicTrip = { id: string; olat: number; olng: number; dlat: number; dlng: number; depart_at: string; vehicle: string };
 export type PublicActivity = { requests: PublicRequest[]; trips: PublicTrip[] };
@@ -110,16 +138,14 @@ export function itemsFromPublic(a: PublicActivity, cities: City[]): MapItem[] {
   const reqs: MapItem[] = (a.requests ?? []).map((r) => ({
     id: r.id,
     kind: 'request',
-    from: snap(cities, r.plat, r.plng),
-    to: snap(cities, r.dlat, r.dlng),
+    ...ends(cities, r.plat, r.plng, r.dlat, r.dlng),
     mode: r.mode,
     endsAt: r.ends_at,
   }));
   const trips: MapItem[] = (a.trips ?? []).map((t) => ({
     id: t.id,
     kind: 'trip',
-    from: snap(cities, t.olat, t.olng),
-    to: snap(cities, t.dlat, t.dlng),
+    ...ends(cities, t.olat, t.olng, t.dlat, t.dlng),
     vehicle: t.vehicle,
     departAt: t.depart_at,
   }));
@@ -130,8 +156,11 @@ export function itemsFromRows(requests: DeliveryRequest[], trips: TripWithDriver
   const reqs: MapItem[] = requests.map((r) => ({
     id: r.id,
     kind: 'request',
-    from: snap(cities, r.pickup_lat, r.pickup_lng),
-    to: snap(cities, r.dropoff_lat, r.dropoff_lng),
+    ...ends(cities, r.pickup_lat, r.pickup_lng, r.dropoff_lat, r.dropoff_lng),
+    fromPt: { lat: r.pickup_lat, lng: r.pickup_lng },
+    toPt: { lat: r.dropoff_lat, lng: r.dropoff_lng },
+    fromText: streetPart(r.pickup_text),
+    toText: streetPart(r.dropoff_text),
     mode: r.pricing_mode,
     price: r.pricing_mode === 'auction' ? r.current_price : r.fixed_price,
     item: r.item_description,
@@ -141,8 +170,11 @@ export function itemsFromRows(requests: DeliveryRequest[], trips: TripWithDriver
   const trs: MapItem[] = trips.map((t) => ({
     id: t.id,
     kind: 'trip',
-    from: snap(cities, t.origin_lat, t.origin_lng),
-    to: snap(cities, t.destination_lat, t.destination_lng),
+    ...ends(cities, t.origin_lat, t.origin_lng, t.destination_lat, t.destination_lng),
+    fromPt: { lat: t.origin_lat, lng: t.origin_lng },
+    toPt: { lat: t.destination_lat, lng: t.destination_lng },
+    fromText: streetPart(t.origin_text),
+    toText: streetPart(t.destination_text),
     driver: t.driver?.full_name ?? 'Driver',
     vehicle: t.vehicle_type,
     departAt: t.depart_at,
